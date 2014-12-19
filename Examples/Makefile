@@ -1,6 +1,6 @@
 #############################################################
 #                                                           #
-# Makefile based on Cris Cecka's (http://github.com/ccecka) #
+# Based on Cris Cecka's Makefile (http://github.com/ccecka) #
 #                                                           #
 #############################################################
 
@@ -8,7 +8,7 @@
 EXEC += stellar_assembly
 
 # Define the C++ compiler to use
-CXX := $(shell which clang++) -std=c++11
+CXX := $(shell which g++) -std=c++11
 
 # Dependency directory and flags
 DEPSDIR := $(shell mkdir -p .deps; echo .deps)
@@ -24,6 +24,9 @@ INCLUDES += -I. -I..
 
 # Define CXX compile flags
 CXXFLAGS += -O3 -funroll-loops -W -Wall -Wextra #-Wfatal-errors
+
+# Use HDF5
+CXXFLAGS += -lhdf5_cpp #-lhdf5 
 
 # Define any directories containing libraries
 #   To include directories use -Lpath/to/files
