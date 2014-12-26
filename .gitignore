@@ -28,3 +28,6 @@ sync_local.sh
 .cproject
 .project
 .settings/*
+
+# Doxygen documentation
+Documentation/*

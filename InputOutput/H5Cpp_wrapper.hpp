@@ -1,10 +1,10 @@
 #pragma GCC system_header
 #include "H5Cpp.h"
 
-/** The only purpose of this file is to suppress the warnings
- * produced by the HDF5 C++ header files.
+/** @file H5Cpp_wrapper.hpp
+ * @brief Suppress the compiler warnings produced by the HDF5 header files.
  *
- * Source: http://stackoverflow.com/questions/3308523/
- * how-to-eliminate-external-lib-third-party-warnings-in-gcc
+ * @see <a href="http://stackoverflow.com/a/3308690">
+ *        Answer from StackOverflow.
+ *      </a>
  */
-
