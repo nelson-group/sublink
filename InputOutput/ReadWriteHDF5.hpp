@@ -48,57 +48,66 @@ std::vector<T> read_dataset(const std::string& file_name,
   return retval;
 }
 
-/** @brief Function to open an HDF5 file in "append" mode and add
- *         a new one-dimensional array.
- *
+///** @brief Function to open an HDF5 file in "append" mode and add
+// *         a new one-dimensional array.
+// *
+// * @note Byte order is little-endian by default.
+// */
+//template <typename T>
+//void add_array(const std::string& writefilename,
+//    const std::vector<T>& array,
+//    const std::string& array_name,
+//    H5::DataType datatype) {
+//
+//    // Open file with read-write access (create if it does not exist).
+//    H5::H5File* file = new H5::H5File(writefilename, H5F_ACC_TRUNC);
+//
+//    // Only proceed if array is non-empty
+//    if (array.size() == 0) {
+//      file->close();
+//      delete file;
+//      return;
+//    }
+//
+//    // Define (one-dimensional) dataspace
+//    hsize_t dimsf[1];  // dataset dimensions
+//    dimsf[0] = array.size();
+//    H5::DataSpace dataspace(1, dimsf);  // rank 1
+//
+//    // Create dataset
+//    H5::DataSet dataset = file->createDataSet(array_name, datatype, dataspace);
+//
+//    // Write to dataset using default memory space
+//    dataset.write(array.data(), datatype, dataspace);
+//
+//    // Clear
+//    file->close();
+//    delete file;
+//  }
+
+/** @brief Function to add a new one-dimensional array to an open HDF5 file.
  *
  * @note Byte order is little-endian by default.
  */
 template <typename T>
-void add_array(const std::string& writefilename,
-    const std::vector<T>& array,
-    const std::string& array_name,
-    H5::DataType datatype) {
+void add_array(H5::H5File* file, const std::vector<T>& array,
+    const std::string& array_name, H5::DataType datatype) {
 
-    // Open file with read-write access (create if it does not exist).
-    H5::H5File* file = new H5::H5File(writefilename, H5F_ACC_TRUNC);
+  assert(file != nullptr);
 
-    // Only proceed if array is non-empty
-    if (array.size() == 0) {
-      file->close();
-      delete file;
-      return;
-    }
+  // Only proceed if array is non-empty
+  if (array.size() == 0)
+    return;
 
-    // Define (one-dimensional) dataspace
-    hsize_t dimsf[1];  // dataset dimensions
-    dimsf[0] = array.size();
-    H5::DataSpace dataspace(1, dimsf);  // rank 1
+  // Define (one-dimensional) dataspace
+  hsize_t dimsf[1];  // dataset dimensions
+  dimsf[0] = array.size();
+  H5::DataSpace dataspace(1, dimsf);  // rank 1
 
-//    // Define datatypes (little-endian) for int8, int16, etc.
-//    H5::IntType datatype_int8(H5::PredType::NATIVE_INT8);
-//    H5::IntType datatype_int16(H5::PredType::NATIVE_INT16);
-//    H5::IntType datatype_int32(H5::PredType::NATIVE_INT32);
-//    H5::IntType datatype_uint64(H5::PredType::NATIVE_UINT64);
-//    datatype_int8.setOrder(H5T_ORDER_LE);
-//    datatype_int16.setOrder(H5T_ORDER_LE);
-//    datatype_int32.setOrder(H5T_ORDER_LE);
-//    datatype_uint64.setOrder(H5T_ORDER_LE);
+  // Create dataset
+  H5::DataSet dataset = file->createDataSet(array_name, datatype, dataspace);
 
-    // Create dataset
-    H5::DataSet dataset = file->createDataSet(array_name, datatype, dataspace);
-
-    // Write to dataset using default memory space
-    dataset.write(array.data(), datatype, dataspace);
-
-    // Clear
-    file->close();
-    delete file;
+  // Write to dataset using default memory space
+  dataset.write(array.data(), datatype, dataspace);
   }
-
-
-
-}
-
-
 

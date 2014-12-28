@@ -99,10 +99,10 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   if (parttype == -1)
     assert(rank == 1);
   else {
-    assert((rank == 2) && (dims_out[1] == num_parttypes));
-    // Define hyperslab for column of interest.
-    hsize_t offset[2] = {0, parttype};     // hyperslab offset in file
-    hsize_t count[2]  = {dims_out[0], 1};  // hyperslab size in file
+    assert((rank == 2) && (dims_out[1] == num_parttypes) && (parttype >= 0));
+    // Define hyperslab (offset and size) for column of interest.
+    hsize_t offset[2] = {0, static_cast<hsize_t>(parttype)};
+    hsize_t count[2]  = {dims_out[0], 1};
     file_space.selectHyperslab(H5S_SELECT_SET, count, offset);
   }
 
