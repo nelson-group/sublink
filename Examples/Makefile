@@ -8,7 +8,7 @@
 EXEC += stellar_assembly
 
 # Define the C++ compiler to use
-CXX := $(shell which g++) -std=c++11
+CXX := $(shell which clang++) -std=c++11
 
 # Dependency directory and flags
 DEPSDIR := $(shell mkdir -p .deps; echo .deps)

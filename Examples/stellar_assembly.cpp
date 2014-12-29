@@ -17,6 +17,7 @@
 #include "../InputOutput/ReadArepoHDF5.hpp"
 #include "../InputOutput/ReadSubfindHDF5.hpp"
 #include "../InputOutput/ReadWriteHDF5.hpp"
+#include "../InputOutput/ReadTreeHDF5.hpp"
 
 /** @brief Type of particle IDs. */
 typedef uint64_t part_id_type;
@@ -29,10 +30,11 @@ typedef int16_t snapnum_type;
 /** @brief Type of indices and sizes. */
 typedef uint64_t size_type;
 
-/** Type containing basic formation info for each stellar particle. */
+// Type containing basic formation info for each stellar particle.
 struct formation_info {
   subf_id_type subfind_id_at_formation;
   snapnum_type snapnum_at_formation;
+
   /** Default constructor. Creates invalid object. */
   formation_info()
       : subfind_id_at_formation(-1), snapnum_at_formation(-1) {
@@ -90,7 +92,7 @@ std::vector<uint32_t> calculate_subhalo_offsets(const std::string& basedir,
 /** @brief Carry out stellar assembly calculations.
  *
  *
- * @todo http://en.cppreference.com/w/cpp/language/parameter_pack
+ * TO DO: http://en.cppreference.com/w/cpp/language/parameter_pack
  */
 void stellar_assembly(const std::string& basedir, const std::string& treedir,
     const std::string& writepath, const snapnum_type snapnum_first,
