@@ -1,6 +1,8 @@
 #pragma once
 /** @file ReadTreeHDF5.hpp
  * @brief Define a class for reading merger trees.
+ *
+ * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
 
 #include <iostream>
@@ -9,20 +11,8 @@
 #include <string>
 #include <sstream>
 
-#include "ReadWriteHDF5.hpp"
-
-/** @brief Type of subhalo IDs in the merger trees. */
-typedef int64_t sub_id_type;
-/** @brief Type of merger tree IDs. */
-typedef int64_t tree_id_type;
-/** @brief Type of subhalo indices in the Subfind catalogs. */
-typedef int32_t index_type;
-/** @brief Type of subhalo lengths. */
-typedef uint32_t sub_len_type;
-/** @brief Type of snapshot numbers. */
-typedef int16_t snapnum_type;
-/** @brief Type of most physical quantities, e.g., masses. */
-typedef float real_type;
+#include "GeneralHDF5.hpp"
+#include "../Util/GeneralUtil.hpp"  // totally_ordered
 
 /** @class Tree
  * @brief A class used to traverse and extract information from
@@ -46,7 +36,24 @@ public:
   /** @brief Type of Subhalos. */
   typedef Subhalo subhalo_type;
 
-  // Define data format.
+  /** @brief Type of subhalo IDs in the merger trees. */
+  typedef int64_t sub_id_type;
+  /** @brief Type of merger tree IDs. */
+  typedef int64_t tree_id_type;
+  /** @brief Type of subhalo indices in the Subfind catalogs. */
+  typedef int32_t index_type;
+  /** @brief Type of subhalo lengths. */
+  typedef uint32_t sub_len_type;
+  /** @brief Type of snapshot numbers. */
+  typedef int16_t snapnum_type;
+  /** @brief Type of most physical quantities, e.g., masses. */
+  typedef float real_type;
+
+  /** Data format containing subhalo data.
+   *
+   * Extra quantities can be chosen from the list found in
+   * http://www.illustris-project.org/w/index.php/Merger_Trees#Tree_format.
+   */
   struct data_format {
     // Fields corresponding to "minimal" data format.
     sub_id_type SubhaloID;
@@ -118,7 +125,7 @@ public:
       tmp_stream << treedir << "/" << name << "." << filenum << ".hdf5";
     std::string treefilename = tmp_stream.str();
 
-    // Create subhalo map
+    // Create temporary subhalo map
     std::map<sub_id_type, internal_subhalo*> sub_map;
     create_subhalo_map(treefilename, sub_map);
 
@@ -127,12 +134,13 @@ public:
     for (auto it = sub_map.begin(); it != sub_map.end(); ++it) {
       internal_subhalo* sub = it->second;
 
-      // Increase size of subhalos_ if necessary.
+      // Increase size of subhalos_ if necessary, initializing new elements
+      // as nullptr.
       if (static_cast<std::size_t>(sub->data_.SnapNum+1) > subhalos_.size())
         subhalos_.resize(sub->data_.SnapNum+1);
       if (static_cast<std::size_t>(sub->data_.SubfindID+1) >
           subhalos_[sub->data_.SnapNum].size())
-        subhalos_[sub->data_.SnapNum].resize(sub->data_.SubfindID+1);
+        subhalos_[sub->data_.SnapNum].resize(sub->data_.SubfindID+1, nullptr);
 
       // Add subhalo to corresponding snapshot
       subhalos_[sub->data_.SnapNum][sub->data_.SubfindID] = sub;
@@ -172,7 +180,55 @@ public:
   // General //
   /////////////
 
-  // num_snapshots, num_subhalos, etc.
+  /** Return the number of snapshots in the tree.
+   *
+   * @note Equals @a snapnum_max+1, where @a snapnum_max is the maximum
+   * snapshot number.
+   */
+  uint16_t num_snapshots() const {
+    return subhalos_.size();
+  }
+
+  ///////////////
+  // SNAPSHOTS //
+  ///////////////
+
+  /** @class Snapshot
+   * @brief Class to represent a snapshot in the merger tree.
+   */
+  class Snapshot : private totally_ordered<Snapshot> {
+  public:
+
+    /** Construct invalid Snapshot. */
+    Snapshot() : t_(nullptr), snap_(-1) {
+    }
+
+    /** Return snapshot number. */
+    snapnum_type snapnum() const {
+      return snap_;
+    }
+
+    /** Test whether this Snapshot and @a x are equal. */
+    bool operator==(const Snapshot& x) const {
+      return (t_ == x.t_) && (snap_ == x.snap_);
+    }
+    /** Test whether this Snapshot is less than @a x in the global order. */
+    bool operator<(const Snapshot& x) const {
+      // Compare t_, then snap_
+      return std::tie(t_, snap_) < std::tie(x.t_, x.snap_);
+    }
+
+  private:
+    friend class Tree;
+    // Pointer back to the Tree containing this Snapshot.
+    Tree* t_;
+    // Snapshot number.
+    snapnum_type snap_;
+    /** Private constructor. */
+    Snapshot(const tree_type* t, snapnum_type snap)
+        : t_(const_cast<tree_type*>(t)), snap_(snap) {
+    }
+  };
 
   //////////////
   // SUBHALOS //
@@ -181,11 +237,34 @@ public:
   /** @class Subhalo
    * @brief Class to represent subhalos in the merger tree.
    */
-  class Subhalo {
+  class Subhalo : private totally_ordered<Subhalo> {
   public:
 
     /** Construct an invalid Subhalo. */
     Subhalo() : t_(nullptr), snap_(-1), idx_(-1) {
+    }
+
+    /** Return the snapshot number of this Subhalo. */
+    snapnum_type snapnum() const {
+      return snap_;
+    }
+    /** Return the Subfind ID of this Subhalo. */
+    index_type index() const {
+      return idx_;
+    }
+
+    /** Test whether this Subhalo and @a x are equal. */
+    bool operator==(const Subhalo& x) const {
+      return (t_ == x.t_) && (snap_ == x.snap_) && (idx_ == x.idx_);
+    }
+    /** Test whether this Subhalo is less than @a x in the global order.
+     *
+     * @note An alternative ordering is given by SubhaloID, which orders
+     *       subhalos in a depth-first fashion.
+     */
+    bool operator<(const Subhalo& x) const {
+      // Compare t_, then snap_, then idx_
+      return std::tie(t_, snap_, idx_) < std::tie(x.t_, x.snap_, x.idx_);
     }
 
   private:
@@ -196,7 +275,18 @@ public:
     snapnum_type snap_;
     // Index of this subhalo in the Subfind catalog.
     index_type idx_;
+    /** Private constructor. */
+    Subhalo(const tree_type* t, snapnum_type snap, index_type idx)
+        : t_(const_cast<tree_type*>(t)), snap_(snap), idx_(idx) {
+    }
+
   };
+
+  ///////////////
+  // ITERATORS //
+  ///////////////
+
+
 
 private:
   ///////////////////

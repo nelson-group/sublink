@@ -16,23 +16,21 @@
 
 #include "../InputOutput/ReadArepoHDF5.hpp"
 #include "../InputOutput/ReadSubfindHDF5.hpp"
-#include "../InputOutput/ReadWriteHDF5.hpp"
+#include "../InputOutput/GeneralHDF5.hpp"
 #include "../InputOutput/ReadTreeHDF5.hpp"
+#include "../Util/TreeUtil.hpp"
 
 /** @brief Type of particle IDs. */
 typedef uint64_t part_id_type;
-/** @brief Type of subhalo IDs in the merger trees. */
-typedef int64_t sub_id_type;
-/** @brief Type of subhalo indices in the Subfind catalogs. */
-typedef int32_t subf_id_type;
-/** @brief Type of snapshot numbers. */
-typedef int16_t snapnum_type;
-/** @brief Type of indices and sizes. */
-typedef uint64_t size_type;
+
+/** Get some types from ReadTreeHDF5.hpp and make them our own. */
+typedef typename Tree::sub_id_type sub_id_type;
+typedef typename Tree::index_type index_type;
+typedef typename Tree::snapnum_type snapnum_type;
 
 // Type containing basic formation info for each stellar particle.
 struct formation_info {
-  subf_id_type subfind_id_at_formation;
+  index_type subfind_id_at_formation;
   snapnum_type snapnum_at_formation;
 
   /** Default constructor. Creates invalid object. */
@@ -40,54 +38,10 @@ struct formation_info {
       : subfind_id_at_formation(-1), snapnum_at_formation(-1) {
   }
   /** Constructor. */
-  formation_info(subf_id_type subf_id_, snapnum_type snapnum_)
+  formation_info(index_type subf_id_, snapnum_type snapnum_)
       : subfind_id_at_formation(subf_id_), snapnum_at_formation(snapnum_) {
   }
 };
-
-/** @brief Function to calculate subhalo offsets.
- *
- * In this context, the subhalo offset is the index of the
- * first particle of a given type that belongs to each subhalo.
- */
-std::vector<uint32_t> calculate_subhalo_offsets(const std::string& basedir,
-    const int16_t snapnum, const int parttype) {
-
-  // Load some FoF group and subhalo info
-  auto group_nsubs = subfind::read_block<uint32_t>(basedir, snapnum, "Group",
-      "GroupNsubs", -1);
-  auto ngroups = subfind::get_scalar_attribute<uint32_t>(basedir, snapnum,
-      "Ngroups_Total");
-  auto nsubs = subfind::get_scalar_attribute<uint32_t>(basedir, snapnum,
-      "Nsubgroups_Total");
-  auto group_len = subfind::read_block<uint32_t>(basedir, snapnum, "Group",
-      "GroupLenType", parttype);
-  auto sub_len = subfind::read_block<uint32_t>(basedir, snapnum, "Subhalo",
-      "SubhaloLenType", parttype);
-  std::vector<uint32_t> group_offset(ngroups, 0);
-  std::vector<uint32_t> sub_offset(nsubs, 0);
-
-  // Calculate offsets
-  uint32_t k = 0;
-  for (uint32_t i = 0; i < ngroups; ++i) {
-    if (i>0)
-      group_offset[i] = group_offset[i-1] + group_len[i-1];
-    if (group_nsubs[i] > 0) {
-      sub_offset[k] = group_offset[i];
-      k++;
-      for (uint32_t j = 1; j < group_nsubs[i]; ++j) {
-        sub_offset[k] = sub_offset[k-1] + sub_len[k-1];
-        k++;
-      }
-    }
-  }
-  // Sanity check
-  if (k != nsubs)
-    std::cerr << "Problem with subhalo offsets: " << k << " not equal to " <<
-        nsubs << std::endl;
-
-  return sub_offset;
-}
 
 /** @brief Carry out stellar assembly calculations.
  *
@@ -143,9 +97,9 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::cout << "Initializing arrays...\n";
     auto ParticleID = arepo::read_block<part_id_type>(snapname, "ParticleIDs",
         parttype);
-    size_type nparts = ParticleID.size();
-    std::vector<subf_id_type> SubfindID(nparts, -1);
-    std::vector<subf_id_type> SubfindIDAtFormation(nparts, -1);
+    uint64_t nparts = ParticleID.size();
+    std::vector<index_type> SubfindID(nparts, -1);
+    std::vector<index_type> SubfindIDAtFormation(nparts, -1);
     std::vector<snapnum_type> SnapNumAtFormation(nparts, -1);
     std::vector<int8_t> InSitu(nparts, -1);
     std::vector<int8_t> BeforeInfall(nparts, -1);
@@ -258,7 +212,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
       SnapNumAtFormation[pos] = cur_info.snapnum_at_formation;
 
       // We determine the "in situ" property using the merger trees
-      subf_id_type subfind_id = SubfindID[pos];
+      index_type subfind_id = SubfindID[pos];
       sub_id_type subhalo_id_at_formation = -1;
       if (cur_info.subfind_id_at_formation != -1)
         subhalo_id_at_formation = SubfindIDToSubhaloID
