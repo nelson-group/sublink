@@ -2,6 +2,8 @@
 /** @file ReadTreeHDF5.hpp
  * @brief Define a class for reading merger trees.
  *
+ * See tree_test.cpp for an usage example.
+ *
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
 
@@ -10,6 +12,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <chrono>    // Wall clock time
 
 #include "GeneralHDF5.hpp"
 #include "../Util/GeneralUtil.hpp"  // totally_ordered
@@ -36,6 +39,11 @@ public:
   /** @brief Type of Subhalos. */
   typedef Subhalo subhalo_type;
 
+  // Predeclaration of SubhaloIterator class.
+  class SubhaloIterator;
+  /** @brief Synonym for SubhaloIterator. */
+  typedef SubhaloIterator subhalo_iterator;
+
   /** @brief Type of subhalo IDs in the merger trees. */
   typedef int64_t sub_id_type;
   /** @brief Type of merger tree IDs. */
@@ -49,7 +57,7 @@ public:
   /** @brief Type of most physical quantities, e.g., masses. */
   typedef float real_type;
 
-  /** Data format containing subhalo data.
+  /** @brief Format of the subhalo data.
    *
    * Extra quantities can be chosen from the list found in
    * http://www.illustris-project.org/w/index.php/Merger_Trees#Tree_format.
@@ -72,7 +80,6 @@ public:
     real_type Mass;
     real_type MassHistory;
     index_type SubfindID;
-
     /** Constructor. */
     data_format(sub_id_type SubhaloID_,
                 sub_id_type SubhaloIDRaw_,
@@ -113,11 +120,16 @@ public:
   // CONSTRUCTOR AND DESTRUCTOR //
   ////////////////////////////////
 
-  /** Construct a Tree from an HDF5 file. */
+  /** @brief Construct a Tree from an HDF5 file.
+   * @param[in] treedir Directory containing the merger tree files.
+   * @param[in] name Suffix of the merger tree filenames, e.g., "extended".
+   * @param[in] filenum File number; -1 for the full, "concatenated"
+   *                    merger tree file.
+   */
   Tree(const std::string& treedir, const std::string& name, const int filenum)
       : subhalos_() {
 
-    // Create filename
+    // Create filename for the given arguments.
     std::stringstream tmp_stream;
     if (filenum == -1)
       tmp_stream << treedir << "/" << name << ".hdf5";
@@ -130,12 +142,15 @@ public:
     create_subhalo_map(treefilename, sub_map);
 
     // Link subhalos
+    auto start = std::chrono::system_clock::now();
     std::cout << "Linking subhalos..." << std::endl;
     for (auto it = sub_map.begin(); it != sub_map.end(); ++it) {
       internal_subhalo* sub = it->second;
 
-      // Increase size of subhalos_ if necessary, initializing new elements
-      // as nullptr.
+      // Increase size of subhalos_ as necessary, initializing
+      // new elements to nullptr. Note that subhalos_[snapnum].size()
+      // is not necessarily equal to the number of subhalos in the
+      // corresponding Subfind catalog.
       if (static_cast<std::size_t>(sub->data_.SnapNum+1) > subhalos_.size())
         subhalos_.resize(sub->data_.SnapNum+1);
       if (static_cast<std::size_t>(sub->data_.SubfindID+1) >
@@ -163,6 +178,8 @@ public:
       if (sub->data_.RootDescendantID != -1)
         sub->root_descendant_ = sub_map[sub->data_.RootDescendantID];
     }
+    std::cout << "Time: " << std::chrono::duration<double>(
+        std::chrono::system_clock::now()-start).count() << " s.\n";
   }
 
   /** Destructor. */
@@ -177,7 +194,7 @@ public:
   }
 
   /////////////
-  // General //
+  // GENERAL //
   /////////////
 
   /** Return the number of snapshots in the tree.
@@ -198,7 +215,6 @@ public:
    */
   class Snapshot : private totally_ordered<Snapshot> {
   public:
-
     /** Construct invalid Snapshot. */
     Snapshot() : t_(nullptr), snap_(-1) {
     }
@@ -218,6 +234,26 @@ public:
       return std::tie(t_, snap_) < std::tie(x.t_, x.snap_);
     }
 
+    /** Return an iterator pointing to the first subhalo in this snapshot. */
+    SubhaloIterator begin() const {
+      assert(is_valid());
+      return SubhaloIterator(t_, snap_, 0);
+    }
+    /** Return iterator pointing to one-past-the-last subhalo in this
+     * snapshot.
+     */
+    SubhaloIterator end() const {
+      assert(is_valid());
+      return SubhaloIterator(t_, snap_, t_->subhalos_[snap_].size());
+    }
+
+    /** Helper function to determine whether this Snapshot is valid. */
+    bool is_valid() const {
+      if (t_ != nullptr)
+        return (snap_ >= 0) && (snap_ < t_->num_snapshots());
+      return false;
+    }
+
   private:
     friend class Tree;
     // Pointer back to the Tree containing this Snapshot.
@@ -230,6 +266,14 @@ public:
     }
   };
 
+  /** @brief Return the Snapshot object given by @a snapnum.
+   * @pre 0 <= @a snapnum < num_snapshots()
+   */
+  Snapshot snapshot(snapnum_type snapnum) const {
+    assert((snapnum >= 0) && (snapnum < num_snapshots()));
+    return Snapshot(this, snapnum);
+  }
+
   //////////////
   // SUBHALOS //
   //////////////
@@ -239,7 +283,6 @@ public:
    */
   class Subhalo : private totally_ordered<Subhalo> {
   public:
-
     /** Construct an invalid Subhalo. */
     Subhalo() : t_(nullptr), snap_(-1), idx_(-1) {
     }
@@ -258,13 +301,51 @@ public:
       return (t_ == x.t_) && (snap_ == x.snap_) && (idx_ == x.idx_);
     }
     /** Test whether this Subhalo is less than @a x in the global order.
-     *
      * @note An alternative ordering is given by SubhaloID, which orders
-     *       subhalos in a depth-first fashion.
+     *       subhalos in a depth-first fashion in the merger tree.
      */
     bool operator<(const Subhalo& x) const {
       // Compare t_, then snap_, then idx_
       return std::tie(t_, snap_, idx_) < std::tie(x.t_, x.snap_, x.idx_);
+    }
+
+    /** Return reference to data as found in the merger tree. */
+    const data_format& data() const {
+      return fetch()->data_;
+    }
+
+    // The member functions below return "linked" Subhalo objects.
+    Subhalo first_progenitor() const {
+      return ptr_to_sub(fetch()->first_progenitor_);
+    }
+    Subhalo next_progenitor() const {
+      return ptr_to_sub(fetch()->next_progenitor_);
+    }
+    Subhalo descendant() const {
+      return ptr_to_sub(fetch()->descendant_);
+    }
+    Subhalo first_subhalo_in_fof_group() const {
+      return ptr_to_sub(fetch()->first_subhalo_in_fof_group_);
+    }
+    Subhalo next_subhalo_in_fof_group() const {
+      return ptr_to_sub(fetch()->next_subhalo_in_fof_group_);
+    }
+    Subhalo last_progenitor() const {
+      return ptr_to_sub(fetch()->last_progenitor_);
+    }
+    Subhalo main_leaf_progenitor() const {
+      return ptr_to_sub(fetch()->main_leaf_progenitor_);
+    }
+    Subhalo root_descendant() const {
+      return ptr_to_sub(fetch()->root_descendant_);
+    }
+
+    /** Helper function to determine whether this Subhalo is valid. */
+    bool is_valid() const {
+      return (t_ != nullptr) &&
+          (snap_ >= 0) && (static_cast<std::size_t>(snap_) < t_->num_snapshots()) &&
+          (idx_ >= 0)  && (static_cast<std::size_t>(idx_)  < t_->subhalos_[snap_].size()) &&
+          (t_->subhalos_[snap_][idx_] != nullptr);
     }
 
   private:
@@ -279,14 +360,102 @@ public:
     Subhalo(const tree_type* t, snapnum_type snap, index_type idx)
         : t_(const_cast<tree_type*>(t)), snap_(snap), idx_(idx) {
     }
-
+    /** Return a pointer to the corresponding internal_subhalo. */
+    internal_subhalo* fetch() const {
+      assert(is_valid());
+      return t_->subhalos_[snap_][idx_];
+    }
+    /** Return a Subhalo object for a given internal_subhalo*.
+     * @param[in] p Pointer to @a internal_subhalo object.
+     * @pre @a t_ != @a nullptr.
+     */
+    Subhalo ptr_to_sub(internal_subhalo* p) const {
+      if (p != nullptr)
+        return Subhalo(t_, p->data_.SnapNum, p->data_.SubfindID);
+      return Subhalo();
+    }
   };
 
   ///////////////
   // ITERATORS //
   ///////////////
 
+  /** @class Tree::SubhaloIterator
+   * @brief Iterator class for Subhalos. A forward iterator.
+   *
+   * @note Only iterates over subhalos that exist in the merger tree.
+   */
+  class SubhaloIterator : private totally_ordered<SubhaloIterator> {
+   public:
+    // These type definitions help us use STL's iterator_traits.
+    /** Element type. */
+    typedef Subhalo value_type;
+    /** Type of pointers to elements. */
+    typedef Subhalo* pointer;
+    /** Type of references to elements. */
+    typedef Subhalo& reference;
+    /** Iterator category. */
+    typedef std::input_iterator_tag iterator_category;
+    /** Difference between iterators */
+    typedef std::ptrdiff_t difference_type;
 
+    /** Construct an invalid SubhaloIterator. */
+    SubhaloIterator() : t_(nullptr), snap_(-1), idx_(-1) {
+    }
+
+    /** Method to dereference a SubhaloIterator.
+     * @pre Subhalo must be valid.
+     */
+    Subhalo operator*() const {
+      assert(is_valid());
+      return Subhalo(t_, snap_, idx_);
+    }
+    /** Method to increment a SubhaloIterator. */
+    SubhaloIterator& operator++() {
+      ++idx_;
+      fix();
+      return *this;
+    }
+    /** Method to compare two SubhaloIterators.
+     * @note Invalid SubhaloIterators are always equal to each other.
+     */
+    bool operator==(const SubhaloIterator& x) const {
+      return (t_ == x.t_) && (snap_ == x.snap_) && (idx_ == x.idx_);
+    }
+
+   private:
+    friend class Tree;
+    Tree* t_;
+    snapnum_type snap_;
+    index_type idx_;
+    /** Private constructor. */
+    SubhaloIterator(const tree_type* t, snapnum_type snap, index_type idx)
+        : t_(const_cast<tree_type*>(t)), snap_(snap), idx_(idx) {
+    }
+    /** Helper function to determine whether this iterator is valid. */
+    bool is_valid() const {
+      return (t_ != nullptr) &&
+          (snap_ >= 0) && (static_cast<std::size_t>(snap_) < t_->num_snapshots()) &&
+          (idx_ >= 0)  && (static_cast<std::size_t>(idx_)  < t_->subhalos_[snap_].size()) &&
+          (t_->subhalos_[snap_][idx_] != nullptr);
+    }
+    /** Check that iterator makes sense. Advance if necessary. */
+    void fix() {
+      assert(t_ != nullptr);
+      assert((snap_ >= 0) && (static_cast<std::size_t>(snap_) < t_->num_snapshots()));
+      assert(idx_ >= 0);
+      auto nsubs = t_->subhalos_[snap_].size();
+      // If idx_ >= nsubs, return end().
+      if (static_cast<std::size_t>(idx_) >= nsubs) {
+        idx_ = nsubs;
+        return;
+      }
+      // Advance until a valid Subhalo or end() is reached.
+      while ((t_->subhalos_[snap_][idx_] == nullptr) &&
+          (static_cast<std::size_t>(idx_) < nsubs))
+        ++idx_;
+    }
+  };
 
 private:
   ///////////////////
@@ -297,17 +466,15 @@ private:
   struct internal_subhalo {
     // Fields from "minimal" data format.
     data_format data_;
-
     // Links to other subhalos.
-    internal_subhalo* first_progenitor_;
-    internal_subhalo* next_progenitor_;
-    internal_subhalo* descendant_;
-    internal_subhalo* first_subhalo_in_fof_group_;
-    internal_subhalo* next_subhalo_in_fof_group_;
-    internal_subhalo* last_progenitor_;
-    internal_subhalo* main_leaf_progenitor_;
-    internal_subhalo* root_descendant_;
-
+    internal_subhalo* first_progenitor_ = nullptr;
+    internal_subhalo* next_progenitor_ = nullptr;
+    internal_subhalo* descendant_ = nullptr;
+    internal_subhalo* first_subhalo_in_fof_group_ = nullptr;
+    internal_subhalo* next_subhalo_in_fof_group_ = nullptr;
+    internal_subhalo* last_progenitor_ = nullptr;
+    internal_subhalo* main_leaf_progenitor_ = nullptr;
+    internal_subhalo* root_descendant_ = nullptr;
     /** Constructor. */
     internal_subhalo(const data_format data)
         : data_(data),
@@ -320,7 +487,6 @@ private:
           main_leaf_progenitor_(nullptr),
           root_descendant_(nullptr) {
     }
-
     /** Default destructor. */
     ~internal_subhalo() = default;
   };
@@ -329,9 +495,13 @@ private:
   // PRIVATE MEMBER FUNCTIONS //
   //////////////////////////////
 
+  /** @brief Read data from HDF5 file and return a temporary mapping between
+   *  SubhaloIDs and pointers to internal_subhalos.
+   */
   template <typename MAP>
   void create_subhalo_map(const std::string& treefilename, MAP& sub_map) {
     // Read data
+    auto start = std::chrono::system_clock::now();
     std::cout << "Reading data from file " << treefilename << "\n";
     auto SubhaloID = read_dataset<sub_id_type>(treefilename, "SubhaloID");
     auto SubhaloIDRaw = read_dataset<sub_id_type>(treefilename, "SubhaloIDRaw");
@@ -349,8 +519,11 @@ private:
     auto Mass = read_dataset<real_type>(treefilename, "Mass");
     auto MassHistory = read_dataset<real_type>(treefilename, "MassHistory");
     auto SubfindID = read_dataset<index_type>(treefilename, "SubfindID");
+    std::cout << "Time: " << std::chrono::duration<double>(
+        std::chrono::system_clock::now()-start).count() << " s.\n";
 
     // Create internal_subhalo objects, storing pointers to them in a map.
+    start = std::chrono::system_clock::now();
     std::cout << "Creating subhalo map...\n";
     uint64_t nrows = SubhaloID.size();
     for (uint64_t rownum = 0; rownum < nrows; ++rownum) {
@@ -373,13 +546,16 @@ private:
               MassHistory[rownum],
               SubfindID[rownum])));
     }
+    std::cout << "Time: " << std::chrono::duration<double>(
+        std::chrono::system_clock::now()-start).count() << " s.\n";
   }
 
   //////////////////////////////
   // PRIVATE MEMBER VARIABLES //
   //////////////////////////////
 
-  /** (snapnum, subfind_id) to Subhalo* mapping. */
+  /** Auxiliary structure. For a given @a snapnum and @a subfind_id,
+   * returns a pointer to the corresponding internal_subhalo.
+   */
   std::vector<std::vector<internal_subhalo*>> subhalos_;
-
 };

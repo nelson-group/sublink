@@ -1,5 +1,5 @@
 #pragma once
-/** @file Util.hpp
+/** @file TreeUtil.hpp
  * @brief Useful functions for working with Subfind catalogs and
  *        SubLink merger trees.
  *

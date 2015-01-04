@@ -6,9 +6,10 @@
 
 # Executables to build
 EXEC += stellar_assembly
+EXEC += tree_test
 
 # Define the C++ compiler to use
-CXX := $(shell which clang++) -std=c++11
+CXX := $(shell which g++) -std=c++11
 
 # Dependency directory and flags
 DEPSDIR := $(shell mkdir -p .deps; echo .deps)
