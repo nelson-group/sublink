@@ -1,7 +1,9 @@
 /** @file tree_test.cpp
- * @brief Simple test: find the "root descendant" of all subhalos from
- *        snapshot 60 iteratively and compare with the RootDescendant
- *        pointer included in the trees.
+ * @brief Example code that shows how to work with SubLink merger trees.
+ *
+ * This example finds the "root descendant" of all subhalos from
+ * snapshot 60 iteratively and compares them with the RootDescendant
+ * pointer included in the trees.
  *
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
@@ -11,7 +13,7 @@
 int main()
 {
   // Load Tree object
-  std::string treedir = "/n/ghernquist/vrodrigu/MergerTrees/output/Subhalos/Illustris/L75n455FP";
+  std::string treedir = "/n/ghernquist/vrodrigu/MergerTrees/output/Galaxies/Illustris/L75n455FP";
   int filenum = -1;  // "concatenated" tree file
   std::string name = "tree_extended";  // Full format
   Tree tree(treedir, name, filenum);
@@ -20,16 +22,28 @@ int main()
   std::size_t count = 0;
   auto snap = tree.snapshot(60);
   for (auto it = snap.begin(); it != snap.end(); ++it) {
+
+    // Find root descendant iteratively and compare with tree value.
     auto orig_sub = *it;
     auto cur_sub = orig_sub;
-
-    // Find root descendant iteratively.
     while (cur_sub.descendant().is_valid())
       cur_sub = cur_sub.descendant();
-
-    // Compare with root descendant as stored in tree
     if (cur_sub != orig_sub.root_descendant())
       std::cerr << "Root descendant does not match!\n";
+
+    // Find main leaf progenitor iteratively and compare with tree value.
+    cur_sub = orig_sub;
+    while (cur_sub.first_progenitor().is_valid())
+      cur_sub = cur_sub.first_progenitor();
+    if (cur_sub != orig_sub.main_leaf_progenitor())
+      std::cerr << "Main leaf progenitor does not match!\n";
+
+    // Find main leaf progenitor using branch iterator and compare
+    // with tree value.
+    for (auto bit = orig_sub.branch_begin(); bit != orig_sub.branch_end(); ++bit)
+      cur_sub = *bit;
+    if (cur_sub != orig_sub.main_leaf_progenitor())
+      std::cerr << "Main leaf progenitor does not match with branch iterator!\n";
 
     // Print some output occasionally
     ++count;

@@ -1,6 +1,6 @@
 #pragma once
 /** @file ReadTreeHDF5.hpp
- * @brief Define a class for reading merger trees.
+ * @brief Define a class for reading and traversing SubLink merger trees.
  *
  * See tree_test.cpp for an usage example.
  *
@@ -18,8 +18,8 @@
 #include "../Util/GeneralUtil.hpp"  // totally_ordered
 
 /** @class Tree
- * @brief A class used to traverse and extract information from
- *        SubLink merger trees.
+ * @brief A class that loads a merger tree, representing it
+ *        as a linked-list structure.
  */
 class Tree {
 private:
@@ -39,10 +39,15 @@ public:
   /** @brief Type of Subhalos. */
   typedef Subhalo subhalo_type;
 
-  // Predeclaration of SubhaloIterator class.
-  class SubhaloIterator;
-  /** @brief Synonym for SubhaloIterator. */
-  typedef SubhaloIterator subhalo_iterator;
+  // Predeclaration of SnapshotIterator class.
+  class SnapshotIterator;
+  /** @brief Synonym for SnapshotIterator. */
+  typedef SnapshotIterator snapshot_iterator;
+
+  // Predeclaration of BranchIterator class.
+  class BranchIterator;
+  /** @brief Synonym for BranchIterator. */
+  typedef BranchIterator branch_iterator;
 
   /** @brief Type of subhalo IDs in the merger trees. */
   typedef int64_t sub_id_type;
@@ -62,7 +67,7 @@ public:
    * Extra quantities can be chosen from the list found in
    * http://www.illustris-project.org/w/index.php/Merger_Trees#Tree_format.
    */
-  struct data_format {
+  struct DataFormat {
     // Fields corresponding to "minimal" data format.
     sub_id_type SubhaloID;
     sub_id_type SubhaloIDRaw;
@@ -81,7 +86,7 @@ public:
     real_type MassHistory;
     index_type SubfindID;
     /** Constructor. */
-    data_format(sub_id_type SubhaloID_,
+    DataFormat(sub_id_type SubhaloID_,
                 sub_id_type SubhaloIDRaw_,
                 sub_id_type LastProgenitorID_,
                 sub_id_type MainLeafProgenitorID_,
@@ -115,6 +120,9 @@ public:
           SubfindID(SubfindID_) {
     }
   };
+
+  /** @brief Synonym for DataFormat. */
+  typedef DataFormat data_format;
 
   ////////////////////////////////
   // CONSTRUCTOR AND DESTRUCTOR //
@@ -235,16 +243,16 @@ public:
     }
 
     /** Return an iterator pointing to the first subhalo in this snapshot. */
-    SubhaloIterator begin() const {
+    SnapshotIterator begin() const {
       assert(is_valid());
-      return SubhaloIterator(t_, snap_, 0);
+      return SnapshotIterator(t_, snap_, 0);
     }
     /** Return iterator pointing to one-past-the-last subhalo in this
      * snapshot.
      */
-    SubhaloIterator end() const {
+    SnapshotIterator end() const {
       assert(is_valid());
-      return SubhaloIterator(t_, snap_, t_->subhalos_[snap_].size());
+      return SnapshotIterator(t_, snap_, t_->subhalos_[snap_].size());
     }
 
     /** Helper function to determine whether this Snapshot is valid. */
@@ -310,7 +318,7 @@ public:
     }
 
     /** Return reference to data as found in the merger tree. */
-    const data_format& data() const {
+    const DataFormat& data() const {
       return fetch()->data_;
     }
 
@@ -338,6 +346,19 @@ public:
     }
     Subhalo root_descendant() const {
       return ptr_to_sub(fetch()->root_descendant_);
+    }
+
+    /** Return a BranchIterator pointing to the current Subhalo. */
+    BranchIterator branch_begin() const {
+      auto p = fetch();
+      return BranchIterator(t_, p, p->main_leaf_progenitor_);
+    }
+    /** Return a BranchIterator pointing to "one past" the main leaf
+     * progenitor of this Subhalo.
+     */
+    BranchIterator branch_end() const {
+      auto p = fetch();
+      return BranchIterator(t_, nullptr, p->main_leaf_progenitor_);
     }
 
     /** Helper function to determine whether this Subhalo is valid. */
@@ -380,12 +401,12 @@ public:
   // ITERATORS //
   ///////////////
 
-  /** @class Tree::SubhaloIterator
-   * @brief Iterator class for Subhalos. A forward iterator.
+  /** @class Tree::SnapshotIterator
+   * @brief Iterator class for Subhalos within the same snapshot.
    *
    * @note Only iterates over subhalos that exist in the merger tree.
    */
-  class SubhaloIterator : private totally_ordered<SubhaloIterator> {
+  class SnapshotIterator : private totally_ordered<SnapshotIterator> {
    public:
     // These type definitions help us use STL's iterator_traits.
     /** Element type. */
@@ -399,27 +420,27 @@ public:
     /** Difference between iterators */
     typedef std::ptrdiff_t difference_type;
 
-    /** Construct an invalid SubhaloIterator. */
-    SubhaloIterator() : t_(nullptr), snap_(-1), idx_(-1) {
+    /** Construct an invalid SnapshotIterator. */
+    SnapshotIterator() : t_(nullptr), snap_(-1), idx_(-1) {
     }
 
-    /** Method to dereference a SubhaloIterator.
+    /** Method to dereference a SnapshotIterator.
      * @pre Subhalo must be valid.
      */
     Subhalo operator*() const {
       assert(is_valid());
       return Subhalo(t_, snap_, idx_);
     }
-    /** Method to increment a SubhaloIterator. */
-    SubhaloIterator& operator++() {
+    /** Method to increment a SnapshotIterator. */
+    SnapshotIterator& operator++() {
       ++idx_;
       fix();
       return *this;
     }
-    /** Method to compare two SubhaloIterators.
-     * @note Invalid SubhaloIterators are always equal to each other.
+    /** Method to compare two SnapshotIterators.
+     * @note Invalid SnapshotIterators are always equal to each other.
      */
-    bool operator==(const SubhaloIterator& x) const {
+    bool operator==(const SnapshotIterator& x) const {
       return (t_ == x.t_) && (snap_ == x.snap_) && (idx_ == x.idx_);
     }
 
@@ -429,8 +450,9 @@ public:
     snapnum_type snap_;
     index_type idx_;
     /** Private constructor. */
-    SubhaloIterator(const tree_type* t, snapnum_type snap, index_type idx)
+    SnapshotIterator(const tree_type* t, snapnum_type snap, index_type idx)
         : t_(const_cast<tree_type*>(t)), snap_(snap), idx_(idx) {
+      fix();
     }
     /** Helper function to determine whether this iterator is valid. */
     bool is_valid() const {
@@ -439,7 +461,7 @@ public:
           (idx_ >= 0)  && (static_cast<std::size_t>(idx_)  < t_->subhalos_[snap_].size()) &&
           (t_->subhalos_[snap_][idx_] != nullptr);
     }
-    /** Check that iterator makes sense. Advance if necessary. */
+    /** Function to advance an iterator to a valid position or end(). */
     void fix() {
       assert(t_ != nullptr);
       assert((snap_ >= 0) && (static_cast<std::size_t>(snap_) < t_->num_snapshots()));
@@ -457,6 +479,76 @@ public:
     }
   };
 
+  /** @class Tree::BranchIterator
+   * @brief Iterator for Subhalos along the main branch of a given Subhalo.
+   *
+   * RI(*this): cur_sub_->main_leaf_progenitor_ == main_leaf_
+   *
+   * Implementation note: the main_leaf_ variable is redundant,
+   * but is included for consistency checks.
+   */
+  class BranchIterator : private totally_ordered<BranchIterator> {
+   public:
+    // These type definitions help us use STL's iterator_traits.
+    /** Element type. */
+    typedef Subhalo value_type;
+    /** Type of pointers to elements. */
+    typedef Subhalo* pointer;
+    /** Type of references to elements. */
+    typedef Subhalo& reference;
+    /** Iterator category. */
+    typedef std::input_iterator_tag iterator_category;
+    /** Difference between iterators */
+    typedef std::ptrdiff_t difference_type;
+
+    /** Construct an invalid BranchIterator. */
+    BranchIterator() : t_(nullptr), cur_sub_(nullptr), main_leaf_(nullptr) {
+    }
+
+    /** Method to dereference a BranchIterator.
+     * @pre Iterator must be valid.
+     */
+    Subhalo operator*() const {
+      assert(is_valid());
+      return Subhalo(t_, cur_sub_->data_.SnapNum, cur_sub_->data_.SubfindID);
+    }
+    /** Method to increment a BranchIterator.
+     * @pre Iterator must be valid.
+     */
+    BranchIterator& operator++() {
+      assert(is_valid());
+      cur_sub_ = cur_sub_->first_progenitor_;  // can be nullptr
+      return *this;
+    }
+    /** Method to compare two BranchIterators.
+     * @note Invalid BranchIterators are always equal to each other.
+     */
+    bool operator==(const BranchIterator& x) const {
+      return (t_ == x.t_) && (main_leaf_ == x.main_leaf_) &&
+          (cur_sub_ == x.cur_sub_);
+    }
+
+   private:
+    friend class Tree;
+    // Pointer back to the Tree container.
+    Tree* t_;
+    // Pointer to the current subhalo.
+    internal_subhalo* cur_sub_;
+    // Pointer to the main leaf progenitor (only used for consistency checks).
+    internal_subhalo* main_leaf_;
+    /** Private constructor. */
+    BranchIterator(const tree_type* t, internal_subhalo* cur_sub,
+        internal_subhalo* main_leaf)
+        : t_(const_cast<tree_type*>(t)), cur_sub_(cur_sub),
+          main_leaf_(main_leaf) {
+    }
+    /** Helper function to determine whether this iterator is valid. */
+    bool is_valid() const {
+      return (t_ != nullptr) && (main_leaf_ != nullptr) && (cur_sub_ != nullptr) &&
+          (cur_sub_->main_leaf_progenitor_ == main_leaf_);
+    }
+  };
+
 private:
   ///////////////////
   // PRIVATE TYPES //
@@ -465,7 +557,7 @@ private:
   /** Internal type for subhalos. */
   struct internal_subhalo {
     // Fields from "minimal" data format.
-    data_format data_;
+    DataFormat data_;
     // Links to other subhalos.
     internal_subhalo* first_progenitor_ = nullptr;
     internal_subhalo* next_progenitor_ = nullptr;
@@ -476,7 +568,7 @@ private:
     internal_subhalo* main_leaf_progenitor_ = nullptr;
     internal_subhalo* root_descendant_ = nullptr;
     /** Constructor. */
-    internal_subhalo(const data_format data)
+    internal_subhalo(const DataFormat data)
         : data_(data),
           first_progenitor_(nullptr),
           next_progenitor_(nullptr),
@@ -496,7 +588,7 @@ private:
   //////////////////////////////
 
   /** @brief Read data from HDF5 file and return a temporary mapping between
-   *  SubhaloIDs and pointers to internal_subhalos.
+   *         SubhaloIDs and pointers to internal_subhalos.
    */
   template <typename MAP>
   void create_subhalo_map(const std::string& treefilename, MAP& sub_map) {
@@ -528,7 +620,7 @@ private:
     uint64_t nrows = SubhaloID.size();
     for (uint64_t rownum = 0; rownum < nrows; ++rownum) {
       sub_map.emplace(SubhaloID[rownum], new internal_subhalo(
-          data_format(
+          DataFormat(
               SubhaloID[rownum],
               SubhaloIDRaw[rownum],
               LastProgenitorID[rownum],
