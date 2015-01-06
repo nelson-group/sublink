@@ -397,6 +397,20 @@ public:
     }
   };
 
+  /** @brief Return the Subhalo object given by @a snapnum and @a subfind_id.
+   * @pre 0 <= @a snapnum < num_snapshots() && @a idx >= 0
+   *
+   * If the requested subhalo does not exist in the tree, an invalid Subhalo
+   * object is returned.
+   */
+  Subhalo subhalo(snapnum_type snapnum, index_type idx) const {
+    assert((snapnum >= 0) && (snapnum < num_snapshots()) && (idx >= 0));
+    if ((static_cast<std::size_t>(idx) >= subhalos_[snapnum].size()) ||
+        (subhalos_[snapnum][idx] == nullptr))
+      return Subhalo();
+    return Subhalo(this, snapnum, idx);
+  }
+
   ///////////////
   // ITERATORS //
   ///////////////

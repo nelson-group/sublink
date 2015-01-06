@@ -31,49 +31,39 @@ typedef typename Tree::index_type index_type;
 typedef typename Tree::snapnum_type snapnum_type;
 
 // Type containing basic formation info for each stellar particle.
-struct formation_info {
+struct FormationInfo {
   index_type subfind_id_at_formation;
   snapnum_type snapnum_at_formation;
-
-  /** Default constructor. Creates invalid object. */
-  formation_info()
+  /** Default constructor. */
+  FormationInfo()
       : subfind_id_at_formation(-1), snapnum_at_formation(-1) {
   }
   /** Constructor. */
-  formation_info(index_type subf_id_, snapnum_type snapnum_)
+  FormationInfo(index_type subf_id_, snapnum_type snapnum_)
       : subfind_id_at_formation(subf_id_), snapnum_at_formation(snapnum_) {
   }
 };
 
-/** @brief Carry out stellar assembly calculations.
- *
- *
- * TO DO: http://en.cppreference.com/w/cpp/language/parameter_pack
- */
+/** @brief Carry out stellar assembly calculations. */
 void stellar_assembly(const std::string& basedir, const std::string& treedir,
     const std::string& writepath, const snapnum_type snapnum_first,
     const snapnum_type snapnum_last) {
 
   const int parttype = 4;  // stars
 
-  // Load the (SnapNum,SubfindID)->SubhaloID matching for all snapshots
+  // Load merger tree
   auto start = std::chrono::system_clock::now();
-  std::cout << "Creating (SnapNum,SubfindID)->SubhaloID mapping...\n";
-  std::vector<std::vector<sub_id_type>> SubfindIDToSubhaloID;
-  for (auto snapnum = snapnum_first; snapnum < snapnum_last+1; ++snapnum) {
-    std::stringstream tmp_stream;
-    tmp_stream << treedir << "/offsets/offsets_" <<
-        std::setfill('0') << std::setw(3) << snapnum << ".hdf5";
-    std::string filename_offsets = tmp_stream.str();
-    SubfindIDToSubhaloID.push_back(read_dataset<sub_id_type>(
-        filename_offsets, "SubhaloID"));
-  }
-  std::cout << "Time: " << std::chrono::duration<double>(
+  std::cout << "Loading merger tree...\n";
+  int filenum = -1;  // "concatenated" tree file
+  std::string name = "tree_extended";  // Full format
+  Tree tree(treedir, name, filenum);
+  std::cout << "Loaded merger tree. Total time: " <<
+      std::chrono::duration<double>(
       std::chrono::system_clock::now()-start).count() << " s.\n";
   std::cout << "\n";
 
   // Store formation info for each particle in this map:
-  std::map<part_id_type, formation_info> ParticleIDMap;
+  std::map<part_id_type, FormationInfo> ParticleIDMap;
 
   // Iterate over snapshots
   std::cout << "Iterating over snapshots..." << std::endl;
@@ -104,8 +94,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::vector<index_type> SubfindIDAtFormation(nparts, -1);
     std::vector<snapnum_type> SnapNumAtFormation(nparts, -1);
     std::vector<int8_t> InSitu(nparts, -1);
-    std::vector<int8_t> BeforeInfall(nparts, -1);
-    std::vector<int8_t> BeforeR200(nparts, -1);
+    std::vector<int8_t> AfterInfall(nparts, -1);
     std::cout << "Time: " << std::chrono::duration<double>(
         std::chrono::system_clock::now()-start).count() << " s.\n";
 
@@ -119,29 +108,14 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::cout << "There are " << nparts << " stellar particles in snapshot " <<
         snapnum << "." << std::endl;
     if (nparts == 0) {
-      // Write to file and continue
-      H5::H5File* file = new H5::H5File(writefilename, H5F_ACC_TRUNC);
-      add_array(file, ParticleID, "ParticleID",
-          H5::PredType::NATIVE_UINT64);
-      add_array(file, SubfindID, "SubfindID",
-          H5::PredType::NATIVE_INT32);
-      add_array(file, SubfindIDAtFormation, "SubfindIDAtFormation",
-          H5::PredType::NATIVE_INT32);
-      add_array(file, SnapNumAtFormation, "SnapNumAtFormation",
-          H5::PredType::NATIVE_INT16);
-      add_array(file, InSitu, "InSitu",
-          H5::PredType::NATIVE_INT8);
-      add_array(file, BeforeInfall, "BeforeInfall",
-          H5::PredType::NATIVE_INT8);
-      add_array(file, BeforeR200, "BeforeR200",
-          H5::PredType::NATIVE_INT8);
-      file->close();
-      delete file;
+      // Create empty HDF5 file and continue
+      H5::H5File file(writefilename, H5F_ACC_TRUNC);
+      file.close();
       std::cout << "Finished for snapshot " << snapnum << ".\n\n";
       continue;
     }
 
-    // Only proceed if there are at least some subhalos
+    // Only proceed if there is at least one subhalo
     auto nsubs = subfind::get_scalar_attribute<uint32_t>(basedir, snapnum,
         "Nsubgroups_Total");
     auto sub_len = subfind::read_block<uint32_t>(basedir, snapnum, "Subhalo",
@@ -150,24 +124,9 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::cout << "There are " << nsubs << " subhalos in snapshot " <<
         snapnum << ".\n";
     if (nsubs == 0) {
-      // Write to file and continue
-      H5::H5File* file = new H5::H5File(writefilename, H5F_ACC_TRUNC);
-      add_array(file, ParticleID, "ParticleID",
-          H5::PredType::NATIVE_UINT64);
-      add_array(file, SubfindID, "SubfindID",
-          H5::PredType::NATIVE_INT32);
-      add_array(file, SubfindIDAtFormation, "SubfindIDAtFormation",
-          H5::PredType::NATIVE_INT32);
-      add_array(file, SnapNumAtFormation, "SnapNumAtFormation",
-          H5::PredType::NATIVE_INT16);
-      add_array(file, InSitu, "InSitu",
-          H5::PredType::NATIVE_INT8);
-      add_array(file, BeforeInfall, "BeforeInfall",
-          H5::PredType::NATIVE_INT8);
-      add_array(file, BeforeR200, "BeforeR200",
-          H5::PredType::NATIVE_INT8);
-      file->close();
-      delete file;
+      // Create empty HDF5 file and continue
+      H5::H5File file(writefilename, H5F_ACC_TRUNC);
+      file.close();
       std::cout << "Finished for snapshot " << snapnum << ".\n\n";
       continue;
     }
@@ -187,69 +146,55 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::cout << "Time: " << std::chrono::duration<double>(
         std::chrono::system_clock::now()-start).count() << " s.\n";
 
-    // We will also need some merger tree info
-    tmp_stream.str("");
-    tmp_stream << treedir << "/offsets/offsets_" <<
-        std::setfill('0') << std::setw(3) << snapnum << ".hdf5";
-    std::string filename_offsets = tmp_stream.str();
-    auto SubhaloID = read_dataset<sub_id_type>(filename_offsets, "SubhaloID");
-    auto MainLeafProgenitorID = read_dataset<sub_id_type>(filename_offsets,
-        "MainLeafProgenitorID");
-
-    // Iterate over stellar particles to fill arrays
+    // Iterate over stellar particles
     start = std::chrono::system_clock::now();
     std::cout << "Iterating over stellar particles...\n";
     for (uint64_t pos = 0; pos < nparts; ++pos) {
-      formation_info cur_info;
+
+      // Get formation info of current particle; create new entry if necessary
+      FormationInfo cur_info;
       auto map_it = ParticleIDMap.find(ParticleID[pos]);
       if (map_it == ParticleIDMap.end()) {
-        // Add new stellar particle to map
-        cur_info = formation_info(SubfindID[pos], snapnum);
+        cur_info = FormationInfo(SubfindID[pos], snapnum);
         ParticleIDMap[ParticleID[pos]] = cur_info;
       }
       else
         cur_info = map_it->second;
-
       SubfindIDAtFormation[pos] = cur_info.subfind_id_at_formation;
       SnapNumAtFormation[pos] = cur_info.snapnum_at_formation;
 
-      // We determine the "in situ" property using the merger trees
+      // If current star particle does not currently belong to any subhalo,
+      // leave InSitu and AfterInfall properties undefined (= -1).
       index_type subfind_id = SubfindID[pos];
-      sub_id_type subhalo_id_at_formation = -1;
-      if (cur_info.subfind_id_at_formation != -1)
-        subhalo_id_at_formation = SubfindIDToSubhaloID
-            [cur_info.snapnum_at_formation][cur_info.subfind_id_at_formation];
+      if (subfind_id == -1)
+        continue;
 
-      if ((subfind_id == -1) || (subhalo_id_at_formation == -1)) {
-        // If the star particle was formed outside of any subhalo,
-        // or is not currently found inside any subhalo,
-        // we consider it to be "ex situ."
+      // If current star particle was formed outside of any subhalo,
+      // define as ex situ and leave AfterInfall property undefined (= -1).
+      if ((subfind_id == -1) || (cur_info.subfind_id_at_formation == -1)) {
         InSitu[pos] = 0;
+        continue;
       }
+
+      // Determine InSitu property using the merger trees
+      auto cur_sub = tree.subhalo(snapnum, subfind_id);
+      auto form_sub = tree.subhalo(cur_info.snapnum_at_formation,
+                                   cur_info.subfind_id_at_formation);
+      if (along_main_branch(cur_sub, form_sub))
+        InSitu[pos] = 1;
       else {
-        if ((subhalo_id_at_formation >= SubhaloID[subfind_id]) &&
-            (subhalo_id_at_formation <= MainLeafProgenitorID[subfind_id]))
-          InSitu[pos] = 1;
-        else {
-          InSitu[pos] = 0;
-
-          // Also check if subhalo_id_at_formation and the subhalo
-          // from the same snapshot along the main branch are inside
-          // the same FoF group
-
-          // Also check if the stellar particle is within R200
-          // of the parent FoF group.
-        }
+        InSitu[pos] = 0;
+        AfterInfall[pos] = static_cast<int>(after_infall(cur_sub, form_sub));
       }
     }
     std::cout << "Time: " << std::chrono::duration<double>(
         std::chrono::system_clock::now()-start).count() << " s.\n";
 
-    // NEW: In order to clear some memory, create new map only with
-    // particles that currently exist...
+    // In order to release some memory, create new map only with
+    // particles that currently exist.
     start = std::chrono::system_clock::now();
     std::cout << "Refreshing map...\n";
-    std::map<part_id_type, formation_info> ParticleIDMap_aux;
+    std::map<part_id_type, FormationInfo> ParticleIDMap_aux;
     for (uint64_t pos = 0; pos < nparts; pos++) {
       auto map_it = ParticleIDMap.find(ParticleID[pos]);
       if (map_it == ParticleIDMap.end())
@@ -276,9 +221,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         H5::PredType::NATIVE_INT16);
     add_array(file, InSitu, "InSitu",
         H5::PredType::NATIVE_INT8);
-    add_array(file, BeforeInfall, "BeforeInfall",
-        H5::PredType::NATIVE_INT8);
-    add_array(file, BeforeR200, "BeforeR200",
+    add_array(file, AfterInfall, "AfterInfall",
         H5::PredType::NATIVE_INT8);
     file->close();
     delete file;
