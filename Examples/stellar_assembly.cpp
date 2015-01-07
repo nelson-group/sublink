@@ -62,7 +62,8 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
       std::chrono::system_clock::now()-start).count() << " s.\n";
   std::cout << "\n";
 
-  // Store formation info for each particle in this map:
+  // Store formation info for each particle in this map
+  // (persistent over snapshots):
   std::map<part_id_type, FormationInfo> ParticleIDMap;
 
   // Iterate over snapshots
@@ -155,11 +156,12 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
       FormationInfo cur_info;
       auto map_it = ParticleIDMap.find(ParticleID[pos]);
       if (map_it == ParticleIDMap.end()) {
-        cur_info = FormationInfo(SubfindID[pos], snapnum);
-        ParticleIDMap[ParticleID[pos]] = cur_info;
+        auto tmp_pair = ParticleIDMap.emplace(ParticleID[pos],
+            FormationInfo(SubfindID[pos], snapnum));
+        assert(tmp_pair.second);  // check that insertion took place
+        map_it = tmp_pair.first;
       }
-      else
-        cur_info = map_it->second;
+      cur_info = map_it->second;
       SubfindIDAtFormation[pos] = cur_info.subfind_id_at_formation;
       SnapNumAtFormation[pos] = cur_info.snapnum_at_formation;
 
@@ -195,15 +197,12 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     start = std::chrono::system_clock::now();
     std::cout << "Refreshing map...\n";
     std::map<part_id_type, FormationInfo> ParticleIDMap_aux;
-    for (uint64_t pos = 0; pos < nparts; pos++) {
+    for (uint64_t pos = 0; pos < nparts; ++pos) {
       auto map_it = ParticleIDMap.find(ParticleID[pos]);
-      if (map_it == ParticleIDMap.end())
-        std::cerr << "Something went wrong: particle should be in map.\n";
-      else
-        ParticleIDMap_aux[ParticleID[pos]] = map_it->second;
+      assert(map_it != ParticleIDMap.end());
+      ParticleIDMap_aux.insert(*map_it);
     }
     ParticleIDMap_aux.swap(ParticleIDMap);
-    ParticleIDMap_aux.clear();
     std::cout << "Time: " << std::chrono::duration<double>(
         std::chrono::system_clock::now()-start).count() << " s.\n";
 
