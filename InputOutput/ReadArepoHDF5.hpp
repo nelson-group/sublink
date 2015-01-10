@@ -1,5 +1,4 @@
 #pragma once
-
 /** @file ReadArepoHDF5.hpp
  * @brief Utilities to read Arepo HDF5 snapshot files.
  *
@@ -34,6 +33,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iomanip>  // setfill, setw, setprecision
 #include <cassert>
 
 #include "H5Cpp_wrapper.hpp"
@@ -42,6 +42,9 @@
  * @brief Namespace containing functions to read Arepo snapshot files.
  */
 namespace arepo {
+
+/** @brief Type of snapshot numbers. */
+typedef int16_t snapnum_type;
 
 /** @brief Function to read a scalar attribute from the snapshot header.
  *
@@ -176,8 +179,8 @@ std::vector<T> read_block_single_file(const std::string& file_name,
 /** @brief Function to read a one-dimensional dataset (a.k.a. block).
  *
  * @tparam T Type of the elements in the datasets.
- * @param[in] file_name_base Path to the input files, excluding the
- *            file number.
+ * @param[in] basedir Directory containing the snapshot files.
+ * @param[in] snapnum Snapshot number.
  * @param[in] block_name Name of the dataset.
  * @param[in] parttype The particle type.
  * @return A vector with the dataset values.
@@ -194,8 +197,16 @@ std::vector<T> read_block_single_file(const std::string& file_name,
  *   on such attributes; they are only used for consistency checks.
  */
 template <class T>
-std::vector<T> read_block(const std::string& file_name_base,
-    const std::string& block_name, const int parttype) {
+std::vector<T> read_block(const std::string& basedir,
+    const snapnum_type snapnum, const std::string& block_name,
+    const int parttype) {
+
+  // Snapshot filename without the file number
+  std::stringstream tmp_stream;
+  tmp_stream << basedir << "/snapdir_" <<
+      std::setfill('0') << std::setw(3) << snapnum << "/snap_" <<
+      std::setfill('0') << std::setw(3) << snapnum;
+  std::string file_name_base = tmp_stream.str();
 
   // Name of first file (just to read header)
   std::stringstream sstream;

@@ -12,7 +12,7 @@
 #include <map>
 #include <string>
 #include <sstream>
-#include <chrono>    // Wall clock time
+#include <cassert>
 
 #include "GeneralHDF5.hpp"
 #include "../Util/GeneralUtil.hpp"  // totally_ordered
@@ -150,8 +150,8 @@ public:
     create_subhalo_map(treefilename, sub_map);
 
     // Link subhalos
-    auto start = std::chrono::system_clock::now();
     std::cout << "Linking subhalos..." << std::endl;
+    WallClock wall_clock;
     for (auto it = sub_map.begin(); it != sub_map.end(); ++it) {
       internal_subhalo* sub = it->second;
 
@@ -186,8 +186,7 @@ public:
       if (sub->data_.RootDescendantID != -1)
         sub->root_descendant_ = sub_map[sub->data_.RootDescendantID];
     }
-    std::cout << "Time: " << std::chrono::duration<double>(
-        std::chrono::system_clock::now()-start).count() << " s.\n";
+    std::cout << "Time: " << wall_clock.seconds() << " s.\n";
   }
 
   /** Destructor. */
@@ -607,8 +606,8 @@ private:
   template <typename MAP>
   void create_subhalo_map(const std::string& treefilename, MAP& sub_map) {
     // Read data
-    auto start = std::chrono::system_clock::now();
     std::cout << "Reading data from file " << treefilename << "\n";
+    WallClock wall_clock;
     auto SubhaloID = read_dataset<sub_id_type>(treefilename, "SubhaloID");
     auto SubhaloIDRaw = read_dataset<sub_id_type>(treefilename, "SubhaloIDRaw");
     auto LastProgenitorID = read_dataset<sub_id_type>(treefilename, "LastProgenitorID");
@@ -625,11 +624,10 @@ private:
     auto Mass = read_dataset<real_type>(treefilename, "Mass");
     auto MassHistory = read_dataset<real_type>(treefilename, "MassHistory");
     auto SubfindID = read_dataset<index_type>(treefilename, "SubfindID");
-    std::cout << "Time: " << std::chrono::duration<double>(
-        std::chrono::system_clock::now()-start).count() << " s.\n";
+    std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
     // Create internal_subhalo objects, storing pointers to them in a map.
-    start = std::chrono::system_clock::now();
+    wall_clock.start();
     std::cout << "Creating subhalo map...\n";
     uint64_t nrows = SubhaloID.size();
     for (uint64_t rownum = 0; rownum < nrows; ++rownum) {
@@ -652,8 +650,7 @@ private:
               MassHistory[rownum],
               SubfindID[rownum])));
     }
-    std::cout << "Time: " << std::chrono::duration<double>(
-        std::chrono::system_clock::now()-start).count() << " s.\n";
+    std::cout << "Time: " << wall_clock.seconds() << " s.\n";
   }
 
   //////////////////////////////

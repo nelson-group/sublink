@@ -5,6 +5,45 @@
 
 #include <iostream>
 #include <vector>
+#include <chrono>   // Wall clock time
+#include <ctime>    // CPU time
+
+/** @brief Class for measuring wall clock time. */
+class WallClock {
+public:
+  /** Constructor. */
+  WallClock() : start_(std::chrono::system_clock::now()) {
+  }
+  /** Start this clock. */
+  void start() {
+    start_ = std::chrono::system_clock::now();
+  }
+  /** Return elapsed time in seconds. */
+  double seconds() {
+    return std::chrono::duration<double>(
+        std::chrono::system_clock::now()-start_).count();
+  }
+private:
+  std::chrono::system_clock::time_point start_;
+};
+
+/** @brief Class for measuring CPU time. */
+class CPUClock {
+public:
+  /** Constructor. */
+  CPUClock() : start_(std::clock()) {
+  }
+  /** Start this clock. */
+  void start() {
+    start_ = std::clock();
+  }
+  /** Return elapsed time in seconds. */
+  double seconds() {
+    return 1.0 * (std::clock()-start_) / CLOCKS_PER_SEC;
+  }
+private:
+  std::clock_t start_;
+};
 
 ////////////////////////////
 // Some tricks from CS207 //

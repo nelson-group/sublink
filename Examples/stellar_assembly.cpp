@@ -11,13 +11,12 @@
 #include <string>
 #include <sstream>
 #include <iomanip>  // setfill, setw, setprecision
-#include <chrono>   // Wall clock time
-#include <ctime>    // CPU time
 
 #include "../InputOutput/ReadArepoHDF5.hpp"
 #include "../InputOutput/ReadSubfindHDF5.hpp"
 #include "../InputOutput/GeneralHDF5.hpp"
 #include "../InputOutput/ReadTreeHDF5.hpp"
+#include "../Util/SnapshotUtil.hpp"
 #include "../Util/TreeUtil.hpp"
 
 /** @brief Type of particle IDs. */
@@ -78,18 +77,11 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
       }
     }
 
-    // Snapshot filename, without the file number
-    std::stringstream tmp_stream;
-    tmp_stream << basedir << "/snapdir_" <<
-        std::setfill('0') << std::setw(3) << snapnum << "/snap_" <<
-        std::setfill('0') << std::setw(3) << snapnum;
-    std::string snapname = tmp_stream.str();
-
     // Initialize output arrays
     start = std::chrono::system_clock::now();
     std::cout << "Initializing arrays...\n";
-    auto ParticleID = arepo::read_block<part_id_type>(snapname, "ParticleIDs",
-        parttype);
+    auto ParticleID = arepo::read_block<part_id_type>(
+        basedir, snapnum, "ParticleIDs", parttype);
     uint64_t nparts = ParticleID.size();
     std::vector<index_type> SubfindID(nparts, -1);
     std::vector<index_type> SubfindIDAtFormation(nparts, -1);
@@ -100,7 +92,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         std::chrono::system_clock::now()-start).count() << " s.\n";
 
     // Output filename
-    tmp_stream.str("");
+    std::stringstream tmp_stream;
     tmp_stream << writepath << "_" <<
         std::setfill('0') << std::setw(3) << snapnum << ".hdf5";
     std::string writefilename = tmp_stream.str();

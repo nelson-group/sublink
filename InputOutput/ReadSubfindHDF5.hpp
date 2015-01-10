@@ -1,5 +1,4 @@
 #pragma once
-
 /** @file ReadSubfindHDF5.hpp
  * @brief Utilities to read Subfind HDF5 snapshot files.
  *
@@ -9,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iomanip>  // setfill, setw, setprecision
 #include <cassert>
 
 #include "H5Cpp_wrapper.hpp"
