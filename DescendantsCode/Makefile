@@ -6,6 +6,7 @@
 
 # Executables to build
 EXEC += find_descendants
+EXEC += compare_descendants
 
 # Define the C++ compiler to use
 CXX := $(shell which g++) -std=c++11
@@ -25,11 +26,14 @@ INCLUDES += -I. -I..
 # Define CXX compile flags
 CXXFLAGS += -O3 -funroll-loops -W -Wall -Wextra #-Wfatal-errors
 
-## Profiling
-#CXXFLAGS += -g -pg
-
 # Use HDF5
 CXXFLAGS += -lhdf5_cpp -lhdf5 
+
+# Parallel sort
+CXXFLAGS += -fopenmp -DUSE_OPENMP
+
+## Profiling
+#CXXFLAGS += -g -pg
 
 # Define any directories containing libraries
 #   To include directories use -Lpath/to/files

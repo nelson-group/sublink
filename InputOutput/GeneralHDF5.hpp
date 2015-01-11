@@ -48,52 +48,13 @@ std::vector<T> read_dataset(const std::string& file_name,
   return retval;
 }
 
-///** @brief Function to open an HDF5 file in "append" mode and add
-// *         a new one-dimensional array.
-// *
-// * @note Byte order is little-endian by default.
-// */
-//template <typename T>
-//void add_array(const std::string& writefilename,
-//    const std::vector<T>& array,
-//    const std::string& array_name,
-//    H5::DataType datatype) {
-//
-//    // Open file with read-write access (create if it does not exist).
-//    H5::H5File* file = new H5::H5File(writefilename, H5F_ACC_TRUNC);
-//
-//    // Only proceed if array is non-empty
-//    if (array.size() == 0) {
-//      file->close();
-//      delete file;
-//      return;
-//    }
-//
-//    // Define (one-dimensional) dataspace
-//    hsize_t dimsf[1];  // dataset dimensions
-//    dimsf[0] = array.size();
-//    H5::DataSpace dataspace(1, dimsf);  // rank 1
-//
-//    // Create dataset
-//    H5::DataSet dataset = file->createDataSet(array_name, datatype, dataspace);
-//
-//    // Write to dataset using default memory space
-//    dataset.write(array.data(), datatype, dataspace);
-//
-//    // Clear
-//    file->close();
-//    delete file;
-//  }
-
 /** @brief Function to add a new one-dimensional array to an open HDF5 file.
  *
  * @note Byte order is little-endian by default.
  */
 template <typename T>
-void add_array(H5::H5File* file, const std::vector<T>& array,
+void add_array(H5::H5File& file, const std::vector<T>& array,
     const std::string& array_name, H5::DataType datatype) {
-
-  assert(file != nullptr);
 
   // Only proceed if array is non-empty
   if (array.size() == 0)
@@ -105,7 +66,7 @@ void add_array(H5::H5File* file, const std::vector<T>& array,
   H5::DataSpace dataspace(1, dimsf);  // rank 1
 
   // Create dataset
-  H5::DataSet dataset = file->createDataSet(array_name, datatype, dataspace);
+  H5::DataSet dataset = file.createDataSet(array_name, datatype, dataspace);
 
   // Write to dataset using default memory space
   dataset.write(array.data(), datatype, dataspace);

@@ -243,14 +243,14 @@ public:
 
     /** Return an iterator pointing to the first subhalo in this snapshot. */
     SnapshotIterator begin() const {
-      assert(is_valid());
+//      assert(is_valid());
       return SnapshotIterator(t_, snap_, 0);
     }
     /** Return iterator pointing to one-past-the-last subhalo in this
      * snapshot.
      */
     SnapshotIterator end() const {
-      assert(is_valid());
+//      assert(is_valid());
       return SnapshotIterator(t_, snap_, t_->subhalos_[snap_].size());
     }
 
@@ -382,7 +382,7 @@ public:
     }
     /** Return a pointer to the corresponding internal_subhalo. */
     internal_subhalo* fetch() const {
-      assert(is_valid());
+//      assert(is_valid());
       return t_->subhalos_[snap_][idx_];
     }
     /** Return a Subhalo object for a given internal_subhalo*.

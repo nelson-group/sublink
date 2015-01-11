@@ -201,7 +201,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     // Write to file.
     start = std::chrono::system_clock::now();
     std::cout << "Writing to file...\n";
-    H5::H5File* file = new H5::H5File(writefilename, H5F_ACC_TRUNC);
+    H5::H5File file(writefilename, H5F_ACC_TRUNC);
     add_array(file, ParticleID, "ParticleID",
         H5::PredType::NATIVE_UINT64);
     add_array(file, SubfindID, "SubfindID",
@@ -214,8 +214,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         H5::PredType::NATIVE_INT8);
     add_array(file, AfterInfall, "AfterInfall",
         H5::PredType::NATIVE_INT8);
-    file->close();
-    delete file;
+    file.close();
     std::cout << "Time: " << std::chrono::duration<double>(
         std::chrono::system_clock::now()-start).count() << " s.\n";
 
