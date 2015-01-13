@@ -37,14 +37,12 @@
 #include <cassert>
 
 #include "H5Cpp_wrapper.hpp"
+#include "../Util/TreeTypes.hpp"
 
 /** @namespace arepo
  * @brief Namespace containing functions to read Arepo snapshot files.
  */
 namespace arepo {
-
-/** @brief Type of snapshot numbers. */
-typedef int16_t snapnum_type;
 
 /** @brief Function to read a scalar attribute from the snapshot header.
  *
@@ -138,10 +136,8 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   // Only proceed if group exists (have a peek at the file).
   auto tmp_file = new H5::H5File(file_name, H5F_ACC_RDONLY, H5P_DEFAULT);
   if (H5Lexists(tmp_file->getId(), parttype_str.data(), H5P_DEFAULT) == false) {
-    std::cout << "Group " << parttype_str << " does not exist. Skipping...\n";
     tmp_file->close();
     delete tmp_file;
-    // Return empty vector
     return std::vector<T>();
   }
   tmp_file->close();

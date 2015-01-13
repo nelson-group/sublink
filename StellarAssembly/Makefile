@@ -5,7 +5,7 @@
 #############################################################
 
 # Executables to build
-EXEC += tree_test
+EXEC += stellar_assembly
 
 # Define the C++ compiler to use
 CXX := $(shell which g++) -std=c++11
@@ -27,6 +27,12 @@ CXXFLAGS += -O3 -funroll-loops -W -Wall -Wextra #-Wfatal-errors
 
 # Use HDF5
 CXXFLAGS += -lhdf5_cpp -lhdf5 
+
+# Parallel sort
+CXXFLAGS += -fopenmp -DUSE_OPENMP
+
+## Profiling
+#CXXFLAGS += -g -pg
 
 # Define any directories containing libraries
 #   To include directories use -Lpath/to/files

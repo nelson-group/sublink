@@ -183,7 +183,7 @@ int main(int argc, char** argv)
     compare_descendants(snapnum1, snapnum2, writepath, trivial);
 
     // Print CPU and wall clock time
-    std::cout << "Finished.\n";
+    std::cout << "Finished for snapshot " << snapnum1 << ".\n";
     std::cout << "CPU time: "  << cpu_clock.seconds() << " s.\n";
     std::cout << "Wall clock time: "  << wall_clock.seconds() << " s.\n";
     std::cout << "\n";

@@ -16,6 +16,7 @@
 
 #include "GeneralHDF5.hpp"
 #include "../Util/GeneralUtil.hpp"  // totally_ordered
+#include "../Util/TreeTypes.hpp"
 
 /** @class Tree
  * @brief A class that loads a merger tree, representing it
@@ -48,19 +49,6 @@ public:
   class BranchIterator;
   /** @brief Synonym for BranchIterator. */
   typedef BranchIterator branch_iterator;
-
-  /** @brief Type of subhalo IDs in the merger trees. */
-  typedef int64_t sub_id_type;
-  /** @brief Type of merger tree IDs. */
-  typedef int64_t tree_id_type;
-  /** @brief Type of subhalo indices in the Subfind catalogs. */
-  typedef int32_t index_type;
-  /** @brief Type of subhalo lengths. */
-  typedef uint32_t sub_len_type;
-  /** @brief Type of snapshot numbers. */
-  typedef int16_t snapnum_type;
-  /** @brief Type of most physical quantities, e.g., masses. */
-  typedef float real_type;
 
   /** @brief Format of the subhalo data.
    *

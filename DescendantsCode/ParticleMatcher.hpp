@@ -31,17 +31,6 @@ static constexpr float alpha_weight = -1;
 // TYPE DEFINITIONS //
 //////////////////////
 
-/** @brief Type of particle IDs. */
-typedef uint64_t part_id_type;
-/** @brief Type of subhalo indices in the Subfind catalogs. */
-typedef int32_t index_type;
-/** @brief Type of subhalo lengths. */
-typedef uint32_t sub_len_type;
-/** @brief Type of snapshot numbers. */
-typedef int16_t snapnum_type;
-/** @brief Type of most physical quantities, e.g., masses. */
-typedef float real_type;
-
 /** Datatype for simulation particles. */
 struct ParticleInfo{
   part_id_type id;

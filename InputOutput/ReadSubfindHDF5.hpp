@@ -12,6 +12,7 @@
 #include <cassert>
 
 #include "H5Cpp_wrapper.hpp"
+#include "../Util/TreeTypes.hpp"
 
 /** @namespace subfind
  * @brief Namespace containing functions to read Subfind output files.
@@ -31,7 +32,7 @@ static constexpr int num_parttypes = 6;
  * @return The attribute value.
  */
 template <class T>
-T get_scalar_attribute(const std::string& basedir, const int16_t snapnum,
+T get_scalar_attribute(const std::string& basedir, const snapnum_type snapnum,
     const std::string& attr_name, const int32_t filenum = 0) {
 
   // Create filename
@@ -139,7 +140,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
  */
 template <class T>
 std::vector<T> read_block(const std::string& basedir,
-    const int16_t snapnum, const std::string& group_name,
+    const snapnum_type snapnum, const std::string& group_name,
     const std::string& block_name, const int parttype = -1) {
 
   // Check precondition
@@ -179,11 +180,8 @@ std::vector<T> read_block(const std::string& basedir,
         attr_name, filenum);
 
     // Skip empty group files
-    if (len_thisfile <= 0) {
-      std::cout << "Group file " << filenum << " from snapshot " << snapnum <<
-          " is empty.\n";
+    if (len_thisfile <= 0)
       continue;
-    }
 
     // Create filename and read data
     tmp_stream.str("");

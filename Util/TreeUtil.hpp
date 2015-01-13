@@ -10,13 +10,11 @@
 #include <vector>
 
 #include "../InputOutput/ReadTreeHDF5.hpp"
+#include "TreeTypes.hpp"
 
 /** Get some types from ReadTreeHDF5.hpp and make them our own. */
 typedef Tree::Snapshot Snapshot;
 typedef Tree::Subhalo Subhalo;
-typedef typename Tree::sub_id_type sub_id_type;
-typedef typename Tree::index_type index_type;
-typedef typename Tree::snapnum_type snapnum_type;
 
 /** @brief Get the progenitor along the main branch at a given snapshot.
  * @param[in] sub The Subhalo of interest.

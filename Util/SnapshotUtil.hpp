@@ -9,13 +9,15 @@
 #include <vector>
 #include <cassert>
 
+#include "TreeTypes.hpp"
+
 /** @brief Function to calculate subhalo offsets.
  *
  * In this context, the subhalo offset is the index of the
  * first particle of a given type that belongs to each subhalo.
  */
 std::vector<uint32_t> calculate_subhalo_offsets(const std::string& basedir,
-    const int16_t snapnum, const int parttype) {
+    const snapnum_type snapnum, const int parttype) {
 
   // Load some FoF group and subhalo info
   auto group_nsubs = subfind::read_block<uint32_t>(basedir, snapnum, "Group",
