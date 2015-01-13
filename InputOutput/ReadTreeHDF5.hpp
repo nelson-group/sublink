@@ -14,6 +14,11 @@
 #include <sstream>
 #include <cassert>
 
+#include <algorithm>  // stable_sort, lower_bound
+#ifdef USE_OPENMP
+#include <parallel/algorithm>  // parallel stable_sort
+#endif
+
 #include "GeneralHDF5.hpp"
 #include "../Util/GeneralUtil.hpp"  // totally_ordered
 #include "../Util/TreeTypes.hpp"
@@ -125,7 +130,7 @@ public:
   Tree(const std::string& treedir, const std::string& name, const int filenum)
       : subhalos_() {
 
-    // Create filename for the given arguments.
+    // Create filename from the given arguments.
     std::stringstream tmp_stream;
     if (filenum == -1)
       tmp_stream << treedir << "/" << name << ".hdf5";
@@ -133,15 +138,14 @@ public:
       tmp_stream << treedir << "/" << name << "." << filenum << ".hdf5";
     std::string treefilename = tmp_stream.str();
 
-    // Create temporary subhalo map
-    std::map<sub_id_type, internal_subhalo*> sub_map;
-    create_subhalo_map(treefilename, sub_map);
+    // Get array with subhalos sorted by their unique ID.
+    auto all_subs = get_sorted_subhalos(treefilename);
 
     // Link subhalos
     std::cout << "Linking subhalos..." << std::endl;
     WallClock wall_clock;
-    for (auto it = sub_map.begin(); it != sub_map.end(); ++it) {
-      internal_subhalo* sub = it->second;
+    for (auto it = all_subs.begin(); it != all_subs.end(); ++it) {
+      internal_subhalo* sub = *it;
 
       // Increase size of subhalos_ as necessary, initializing
       // new elements to nullptr. Note that subhalos_[snapnum].size()
@@ -157,22 +161,14 @@ public:
       subhalos_[sub->data_.SnapNum][sub->data_.SubfindID] = sub;
 
       // Establish links between subhalos
-      if (sub->data_.FirstProgenitorID != -1)
-        sub->first_progenitor_ = sub_map[sub->data_.FirstProgenitorID];
-      if (sub->data_.NextProgenitorID != -1)
-        sub->next_progenitor_ = sub_map[sub->data_.NextProgenitorID];
-      if (sub->data_.DescendantID != -1)
-        sub->descendant_ = sub_map[sub->data_.DescendantID];
-      if (sub->data_.FirstSubhaloInFOFGroupID != -1)
-        sub->first_subhalo_in_fof_group_ = sub_map[sub->data_.FirstSubhaloInFOFGroupID];
-      if (sub->data_.NextSubhaloInFOFGroupID != -1)
-        sub->next_subhalo_in_fof_group_ = sub_map[sub->data_.NextSubhaloInFOFGroupID];
-      if (sub->data_.LastProgenitorID != -1)
-        sub->last_progenitor_ = sub_map[sub->data_.LastProgenitorID];
-      if (sub->data_.MainLeafProgenitorID != -1)
-        sub->main_leaf_progenitor_ = sub_map[sub->data_.MainLeafProgenitorID];
-      if (sub->data_.RootDescendantID != -1)
-        sub->root_descendant_ = sub_map[sub->data_.RootDescendantID];
+      establish_link(all_subs, sub->first_progenitor_, sub->data_.FirstProgenitorID);
+      establish_link(all_subs, sub->next_progenitor_, sub->data_.NextProgenitorID);
+      establish_link(all_subs, sub->descendant_, sub->data_.DescendantID);
+      establish_link(all_subs, sub->first_subhalo_in_fof_group_, sub->data_.FirstSubhaloInFOFGroupID);
+      establish_link(all_subs, sub->next_subhalo_in_fof_group_, sub->data_.NextSubhaloInFOFGroupID);
+      establish_link(all_subs, sub->last_progenitor_, sub->data_.LastProgenitorID);
+      establish_link(all_subs, sub->main_leaf_progenitor_, sub->data_.MainLeafProgenitorID);
+      establish_link(all_subs, sub->root_descendant_, sub->data_.RootDescendantID);
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
   }
@@ -588,13 +584,29 @@ private:
   // PRIVATE MEMBER FUNCTIONS //
   //////////////////////////////
 
+  /** Compare two internal_subhalo pointers by their subhalo ID.
+   * @pre @a a and @a b are not @a nullptr.
+   */
+  static bool compareBySubhaloID(internal_subhalo * const & a,
+      internal_subhalo * const & b) {
+    return (*a).data_.SubhaloID < (*b).data_.SubhaloID;
+  }
+
+  /** Compare an internal_subhalo pointer with a subhalo ID.
+   * @pre @a sub is not @a nullptr.
+   */
+  static bool compareWithSubhaloID(internal_subhalo * const & sub,
+      const sub_id_type& sub_id) {
+    return (*sub).data_.SubhaloID < sub_id;
+  }
+
   /** @brief Read data from HDF5 file and return a temporary mapping between
    *         SubhaloIDs and pointers to internal_subhalos.
    */
-  template <typename MAP>
-  void create_subhalo_map(const std::string& treefilename, MAP& sub_map) {
+  std::vector<internal_subhalo*> get_sorted_subhalos(
+      const std::string& treefilename) const {
     // Read data
-    std::cout << "Reading data from file " << treefilename << "\n";
+    std::cout << "Reading data from file " << treefilename << "...\n";
     WallClock wall_clock;
     auto SubhaloID = read_dataset<sub_id_type>(treefilename, "SubhaloID");
     auto SubhaloIDRaw = read_dataset<sub_id_type>(treefilename, "SubhaloIDRaw");
@@ -614,12 +626,13 @@ private:
     auto SubfindID = read_dataset<index_type>(treefilename, "SubfindID");
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
-    // Create internal_subhalo objects, storing pointers to them in a map.
+    // Create internal_subhalo objects, storing pointers to them in a vector.
     wall_clock.start();
-    std::cout << "Creating subhalo map...\n";
+    std::cout << "Creating subhalo objects...\n";
     uint64_t nrows = SubhaloID.size();
+    std::vector<internal_subhalo*> all_subs;
     for (uint64_t rownum = 0; rownum < nrows; ++rownum) {
-      sub_map.emplace(SubhaloID[rownum], new internal_subhalo(
+      all_subs.emplace_back(new internal_subhalo(
           DataFormat(
               SubhaloID[rownum],
               SubhaloIDRaw[rownum],
@@ -639,6 +652,34 @@ private:
               SubfindID[rownum])));
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
+
+    // Sort array
+    std::cout << "Sorting array...\n";
+    wall_clock.start();
+    CPUClock cpu_clock;
+#ifdef USE_OPENMP
+    __gnu_parallel::stable_sort(all_subs.begin(), all_subs.end(), compareBySubhaloID);
+#else
+    std::stable_sort(all_subs.begin(), all_subs.end(), compareBySubhaloID);
+#endif
+    std::cout << "Time: " << wall_clock.seconds() << " s.\n";
+    std::cout << "Speedup: " << cpu_clock.seconds()/wall_clock.seconds() << ".\n";
+
+    return all_subs;
+  }
+
+  /** Associate the pointer @a sub, initally set to @a nullptr, with the
+   * subhalo with identifier @a sub_id.
+   */
+  void establish_link(const std::vector<internal_subhalo*>& all_subs,
+      internal_subhalo*& sub, const sub_id_type& sub_id) const {
+    if (sub_id == -1)
+      return;
+    auto it = std::lower_bound(all_subs.begin(), all_subs.end(), sub_id,
+        compareWithSubhaloID);
+    assert(it != all_subs.end());
+    sub = *it;
+    assert(sub->data_.SubhaloID == sub_id);
   }
 
   //////////////////////////////
