@@ -9,6 +9,7 @@
 #include <vector>
 #include <cassert>
 
+#include "../InputOutput/ReadSubfindHDF5.hpp"
 #include "TreeTypes.hpp"
 
 /** @brief Function to calculate subhalo offsets.
@@ -50,4 +51,39 @@ std::vector<uint32_t> calculate_subhalo_offsets(const std::string& basedir,
   assert(k == nsubs);
 
   return sub_offset;
+}
+
+/** Create list of valid snapshots. */
+std::vector<snapnum_type> get_valid_snapnums(
+    const std::string& skipsnaps_filename,
+    const snapnum_type& snapnum_first,
+    const snapnum_type& snapnum_last) {
+
+  // Open file with snapshot numbers, one per line
+  std::ifstream infile (skipsnaps_filename.data());
+  if (!infile.is_open()) {
+    std::cerr << "Cannot open file: " << skipsnaps_filename << "\n";
+    assert(false);
+  }
+
+  // Read snapshot numbers to be skipped
+  std::vector<snapnum_type> invalid_snapnums;
+  std::string line;
+  while (infile >> line) {
+
+    std::cout << line << std::endl;
+
+    invalid_snapnums.push_back(atoi(line.data()));
+
+  }
+  infile.close();
+
+  // Add valid snapshots to list
+  std::vector<snapnum_type> valid_snapnums;
+  for (auto snapnum = snapnum_first; snapnum <= snapnum_last; ++snapnum)
+    if (std::find(invalid_snapnums.begin(), invalid_snapnums.end(), snapnum) ==
+        invalid_snapnums.end())
+      valid_snapnums.push_back(snapnum);
+
+  return valid_snapnums;
 }

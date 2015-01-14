@@ -57,7 +57,7 @@ int main(int argc, char** argv)
     CPUClock cpu_clock;
     WallClock wall_clock;
 
-    // Find descendants
+    // Find descendants and write to files
     auto pm = ParticleMatcher(basedir, basedir, snapnum1, snapnum2, tracking_scheme);
     pm.write_to_file(writepath);
 
