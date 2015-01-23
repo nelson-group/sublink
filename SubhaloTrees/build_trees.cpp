@@ -27,9 +27,9 @@ int main(int argc, char** argv)
   WallClock wall_clock;
 
   // Construct trees and write to files.
-  auto all_trees = AllTrees(input_path, snapnum_first, snapnum_last,
-      skipsnaps_filename);
-  //all_trees.write_to_files(output_path);
+  auto all_trees = AllTrees(input_path, output_path, snapnum_first,
+      snapnum_last, skipsnaps_filename);
+  (void) all_trees;  // silence compiler warning
 
   // Print CPU and wall clock time
   std::cout << "Finished.\n";
