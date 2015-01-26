@@ -19,6 +19,9 @@
  * "immediate" one at snapshot2. Otherwise, we define the unique descendant
  * as the "skipped" one at snapshot3, since it is the one with the highest
  * score.
+ *
+ * Update (01/23/15): Also keep track of the second highest score
+ * at each snapshot.
  */
 void compare_descendants(const snapnum_type snapnum1,
     const snapnum_type snapnum2, const std::string& writepath,
@@ -60,7 +63,8 @@ void compare_descendants(const snapnum_type snapnum1,
   auto sub_mass_12 = read_dataset<real_type>(filename_12, "SubhaloMass");
   auto sub_grnr_12 = read_dataset<uint32_t>(filename_12, "SubhaloGrNr");
   auto desc_index_12 = read_dataset<index_type>(filename_12, "DescendantIndex");
-  auto score_12 = read_dataset<real_type>(filename_12, "Score");
+  auto first_score_12 = read_dataset<real_type>(filename_12, "FirstScore");
+  auto second_score_12 = read_dataset<real_type>(filename_12, "SecondScore");
   uint32_t nsubs = sub_len_12.size();
 
   // Indicate if snapshot 2 is skipped
@@ -72,7 +76,8 @@ void compare_descendants(const snapnum_type snapnum1,
     add_array(writefile, sub_mass_12, "SubhaloMass", H5::PredType::NATIVE_FLOAT);
     add_array(writefile, sub_grnr_12, "SubhaloGrNr", H5::PredType::NATIVE_UINT32);
     add_array(writefile, desc_index_12, "DescendantIndex", H5::PredType::NATIVE_INT32);
-    add_array(writefile, score_12, "Score", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, first_score_12, "FirstScore", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, second_score_12, "SecondScore", H5::PredType::NATIVE_FLOAT);
     add_array(writefile, skip_snapshot, "SkipSnapshot", H5::PredType::NATIVE_UINT8);
     writefile.close();
     return;
@@ -95,24 +100,28 @@ void compare_descendants(const snapnum_type snapnum1,
   // Read info from other files
   auto desc_index_13 = read_dataset<index_type>(filename_13, "DescendantIndex");
   auto desc_index_23 = read_dataset<index_type>(filename_23, "DescendantIndex");
-  auto score_13 = read_dataset<index_type>(filename_13, "Score");
+  auto first_score_13 = read_dataset<index_type>(filename_13, "FirstScore");
+  auto second_score_13 = read_dataset<index_type>(filename_13, "SecondScore");
 
   // Initialize descendants and scores to the ones from snapshot 2
   auto desc_final = desc_index_12;
-  auto score_final = score_12;
+  auto first_score_final = first_score_12;
+  auto second_score_final = second_score_12;
 
   // Compare descendants
   for (uint32_t sub_index = 0; sub_index < nsubs; ++sub_index) {
     index_type desc_immediate = desc_index_12[sub_index];
     index_type desc_skip = desc_index_13[sub_index];
-    real_type score_skip = score_13[sub_index];
+    real_type first_score_skip = first_score_13[sub_index];
+    real_type second_score_skip = second_score_13[sub_index];
 
     if (desc_skip == -1)
       continue;
 
     if (desc_immediate == -1) {
       desc_final[sub_index] = desc_skip;
-      score_final[sub_index] = score_skip;
+      first_score_final[sub_index] = first_score_skip;
+      second_score_final[sub_index] = second_score_skip;
       skip_snapshot[sub_index] = 1;
       continue;
     }
@@ -120,7 +129,8 @@ void compare_descendants(const snapnum_type snapnum1,
     index_type desc_straight = desc_index_23[desc_immediate];
     if (desc_straight != desc_skip) {
       desc_final[sub_index] = desc_skip;
-      score_final[sub_index] = score_skip;
+      first_score_final[sub_index] = first_score_skip;
+      second_score_final[sub_index] = second_score_skip;
       skip_snapshot[sub_index] = 1;
     }
   }
@@ -130,7 +140,8 @@ void compare_descendants(const snapnum_type snapnum1,
   add_array(writefile, sub_mass_12, "SubhaloMass", H5::PredType::NATIVE_FLOAT);
   add_array(writefile, sub_grnr_12, "SubhaloGrNr", H5::PredType::NATIVE_UINT32);
   add_array(writefile, desc_final, "DescendantIndex", H5::PredType::NATIVE_INT32);
-  add_array(writefile, score_final, "Score", H5::PredType::NATIVE_FLOAT);
+  add_array(writefile, first_score_final, "FirstScore", H5::PredType::NATIVE_FLOAT);
+  add_array(writefile, second_score_final, "SecondScore", H5::PredType::NATIVE_FLOAT);
   add_array(writefile, skip_snapshot, "SkipSnapshot", H5::PredType::NATIVE_UINT8);
   writefile.close();
 }
@@ -175,17 +186,15 @@ int main(int argc, char** argv)
     if ((snapnum2 == -1) || (snapnum3 == -1))
       trivial = true;
 
-    // Measure CPU and wall clock (real) time
-    CPUClock cpu_clock;
+    // Measure wall clock (real) time
     WallClock wall_clock;
 
     // Compare descendants
     compare_descendants(snapnum1, snapnum2, writepath, trivial);
 
-    // Print CPU and wall clock time
+    // Print wall clock time
     std::cout << "Finished for snapshot " << snapnum1 << ".\n";
-    std::cout << "CPU time: "  << cpu_clock.seconds() << " s.\n";
-    std::cout << "Wall clock time: "  << wall_clock.seconds() << " s.\n";
+    std::cout << "Time: "  << wall_clock.seconds() << " s.\n";
     std::cout << "\n";
   }
 

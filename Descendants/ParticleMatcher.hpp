@@ -147,7 +147,8 @@ public:
   public:
     /** Default constructor. Creates invalid Snapshot. */
     Snapshot() : pm_(nullptr), basedir_(), snapnum_(-1), sub_len_(),
-        sub_mass_(), sub_grnr_(), descendants_(), max_scores_() {
+        sub_mass_(), sub_grnr_(), descendants_(), first_scores_(),
+        second_scores_() {
     }
     /** Default destructor. */
     ~Snapshot() = default;
@@ -174,14 +175,16 @@ public:
     // Index of descendant subhalo.
     std::vector<index_type> descendants_;
     // Score of unique descendant.
-    std::vector<real_type> max_scores_;
+    std::vector<real_type> first_scores_;
+    // Score of second-best descendant candidate.
+    std::vector<real_type> second_scores_;
 
     /** Private constructor. */
     Snapshot(const ParticleMatcher* pm, const std::string& basedir,
         const snapnum_type snapnum, const std::string& tracking_scheme)
         : pm_(const_cast<ParticleMatcher*>(pm)), basedir_(basedir),
           snapnum_(snapnum), sub_len_(), sub_mass_(), sub_grnr_(),
-          descendants_(), max_scores_() {
+          descendants_(), first_scores_(), second_scores_() {
       // Read data
       read_ids(tracking_scheme);
     }
@@ -228,7 +231,8 @@ public:
       sub_grnr_ = subfind::read_block<uint32_t>(
           basedir_, snapnum_, "Subhalo", "SubhaloGrNr", -1);
       descendants_ = std::vector<index_type>(nsubs, -1);
-      max_scores_ = std::vector<real_type>(nsubs, 0);
+      first_scores_  = std::vector<real_type>(nsubs, 0);
+      second_scores_ = std::vector<real_type>(nsubs, 0);
       std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
       // Reserve space in memory when dealing with DM
@@ -327,7 +331,8 @@ public:
       add_array(file, sub_mass_, "SubhaloMass", H5::PredType::NATIVE_FLOAT);
       add_array(file, sub_grnr_, "SubhaloGrNr", H5::PredType::NATIVE_UINT32);
       add_array(file, descendants_, "DescendantIndex", H5::PredType::NATIVE_INT32);
-      add_array(file, max_scores_, "Score", H5::PredType::NATIVE_FLOAT);
+      add_array(file, first_scores_, "FirstScore", H5::PredType::NATIVE_FLOAT);
+      add_array(file, second_scores_, "SecondScore", H5::PredType::NATIVE_FLOAT);
       file.close();
       std::cout << "Time: " << wall_clock.seconds() << " s.\n";
     }
@@ -388,11 +393,27 @@ private:
     wall_clock.start();
     for (uint32_t sub_index1 = 0; sub_index1 < snap1_->nsubs(); ++sub_index1) {
       auto& cur_cands = scores[sub_index1];
+
       if (cur_cands.size() == 0)
         continue;
-      auto it = std::max_element(cur_cands.begin(), cur_cands.end());
-      snap1_->descendants_[sub_index1] = it->index();
-      snap1_->max_scores_[sub_index1] = it->score();
+
+      real_type first_score = 0;
+      real_type second_score = 0;
+      index_type desc_index = -1;
+      for (auto it = cur_cands.begin(); it != cur_cands.end(); ++it) {
+        auto cur_score = it->score();
+        if (cur_score > first_score) {
+          second_score = first_score;
+          first_score = cur_score;
+          desc_index = it->index();
+        }
+        else if (cur_score > second_score) {
+          second_score = cur_score;
+        }
+      }
+      snap1_->descendants_[sub_index1] = desc_index;
+      snap1_->first_scores_[sub_index1] = first_score;
+      snap1_->second_scores_[sub_index1] = second_score;
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
   }
