@@ -6,6 +6,7 @@
 
 # Executables to build
 EXEC += stellar_assembly
+EXEC += count_mergers
 EXEC += tree_test
 
 # Define the C++ compiler to use
@@ -29,8 +30,8 @@ CXXFLAGS += -O3 -funroll-loops -W -Wall -Wextra #-Wfatal-errors
 # Use HDF5
 CXXFLAGS += -lhdf5_cpp -lhdf5 
 
-# Parallel sort
-CXXFLAGS += -fopenmp -DUSE_OPENMP
+## Parallel sort
+#CXXFLAGS += -fopenmp -DUSE_OPENMP
 
 ## Profiling
 #CXXFLAGS += -g -pg

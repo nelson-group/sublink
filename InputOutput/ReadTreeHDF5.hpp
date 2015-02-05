@@ -12,6 +12,7 @@
 #include <string>
 #include <sstream>
 #include <cassert>
+#include <tuple>  // std::tie
 
 #include <algorithm>  // stable_sort, lower_bound
 #ifdef USE_OPENMP
@@ -77,23 +78,39 @@ public:
     real_type Mass;
     real_type MassHistory;
     index_type SubfindID;
+
+    // Additional fields from "extended" format.
+#ifdef COUNT_MERGERS
+    FloatArray<6> SubhaloMassType;
+    real_type SubhaloSFR;
+    FloatArray<8> SubhaloStellarPhotometrics;
+#endif
+
     /** Constructor. */
     DataFormat(sub_id_type SubhaloID_,
-                sub_id_type SubhaloIDRaw_,
-                sub_id_type LastProgenitorID_,
-                sub_id_type MainLeafProgenitorID_,
-                sub_id_type RootDescendantID_,
-                tree_id_type TreeID_,
-                snapnum_type SnapNum_,
-                sub_id_type FirstProgenitorID_,
-                sub_id_type NextProgenitorID_,
-                sub_id_type DescendantID_,
-                sub_id_type FirstSubhaloInFOFGroupID_,
-                sub_id_type NextSubhaloInFOFGroupID_,
-                sub_len_type NumParticles_,
-                real_type Mass_,
-                real_type MassHistory_,
-                index_type SubfindID_)
+               sub_id_type SubhaloIDRaw_,
+               sub_id_type LastProgenitorID_,
+               sub_id_type MainLeafProgenitorID_,
+               sub_id_type RootDescendantID_,
+               tree_id_type TreeID_,
+               snapnum_type SnapNum_,
+               sub_id_type FirstProgenitorID_,
+               sub_id_type NextProgenitorID_,
+               sub_id_type DescendantID_,
+               sub_id_type FirstSubhaloInFOFGroupID_,
+               sub_id_type NextSubhaloInFOFGroupID_,
+               sub_len_type NumParticles_,
+               real_type Mass_,
+               real_type MassHistory_,
+               index_type SubfindID_
+
+#ifdef COUNT_MERGERS
+               ,
+               FloatArray<6>& SubhaloMassType_,
+               real_type SubhaloSFR_,
+               FloatArray<8>& SubhaloStellarPhotometrics_
+#endif
+               )
         : SubhaloID(SubhaloID_),
           SubhaloIDRaw(SubhaloIDRaw_),
           LastProgenitorID(LastProgenitorID_),
@@ -109,7 +126,15 @@ public:
           NumParticles(NumParticles_),
           Mass(Mass_),
           MassHistory(MassHistory_),
-          SubfindID(SubfindID_) {
+          SubfindID(SubfindID_)
+
+#ifdef COUNT_MERGERS
+          ,
+          SubhaloMassType(SubhaloMassType_),
+          SubhaloSFR(SubhaloSFR_),
+          SubhaloStellarPhotometrics(SubhaloStellarPhotometrics_)
+#endif
+          {
     }
   };
 
@@ -212,6 +237,11 @@ public:
     /** Return snapshot number. */
     snapnum_type snapnum() const {
       return snap_;
+    }
+
+    /** Return the number of (non-empty) subhalos in this Snapshot. */
+    std::size_t nsubs() const {
+      return t_->subhalos_[snap_].size();
     }
 
     /** Test whether this Snapshot and @a x are equal. */
@@ -623,6 +653,12 @@ private:
     auto Mass = read_dataset<real_type>(treefilename, "Mass");
     auto MassHistory = read_dataset<real_type>(treefilename, "MassHistory");
     auto SubfindID = read_dataset<index_type>(treefilename, "SubfindID");
+
+#ifdef COUNT_MERGERS
+    auto SubhaloMassType = read_dataset<FloatArray<6>>(treefilename, "SubhaloMassType");
+    auto SubhaloSFR = read_dataset<real_type>(treefilename, "SubhaloSFR");
+    auto SubhaloStellarPhotometrics = read_dataset<FloatArray<8>>(treefilename, "SubhaloStellarPhotometrics");
+#endif
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
     // Create internal_subhalo objects, storing pointers to them in a vector.
@@ -648,7 +684,15 @@ private:
               NumParticles[rownum],
               Mass[rownum],
               MassHistory[rownum],
-              SubfindID[rownum])));
+              SubfindID[rownum]
+
+#ifdef COUNT_MERGERS
+              ,
+              SubhaloMassType[rownum],
+              SubhaloSFR[rownum],
+              SubhaloStellarPhotometrics[rownum]
+#endif
+              )));
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 

@@ -19,3 +19,21 @@ typedef uint32_t sub_len_type;
 typedef int16_t snapnum_type;
 /** @brief Type of most physical quantities, e.g., masses. */
 typedef float real_type;
+
+/** @brief Type for representing arrays of floats (e.g., positions). */
+template <int N = 1>
+struct FloatArray {
+  float elem[N];
+
+  // Typedefs
+  typedef float          value_type;
+  typedef float&         reference;
+  typedef const float&   const_reference;
+  typedef float*         iterator;
+  typedef const float*   const_iterator;
+
+  // Accesors
+  reference       operator[](std::size_t i)       { return elem[i]; }
+  const_reference operator[](std::size_t i) const { return elem[i]; }
+
+};

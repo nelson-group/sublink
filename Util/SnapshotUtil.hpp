@@ -7,6 +7,7 @@
  */
 
 #include <vector>
+#include <fstream>
 #include <cassert>
 
 #include "../InputOutput/ReadSubfindHDF5.hpp"

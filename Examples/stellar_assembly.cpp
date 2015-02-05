@@ -19,11 +19,10 @@
 
 #include "../InputOutput/ReadArepoHDF5.hpp"
 #include "../InputOutput/ReadSubfindHDF5.hpp"
-#include "../InputOutput/GeneralHDF5.hpp"
 #include "../InputOutput/ReadTreeHDF5.hpp"
 #include "../Util/SnapshotUtil.hpp"
+#include "../Util/GeneralUtil.hpp"
 #include "../Util/TreeUtil.hpp"
-#include "../Util/TreeTypes.hpp"
 
 // Type of stellar particles
 static constexpr int parttype = 4;
@@ -287,18 +286,15 @@ int main(int argc, char** argv)
   int16_t snapnum_last = atoi(argv[5]);
 
   // Measure CPU and wall clock (real) time
-  auto c_start  = std::clock();
-  auto t_start = std::chrono::system_clock::now();
+  WallClock wall_clock;
+  CPUClock cpu_clock;
 
   // Do stuff
   stellar_assembly(basedir, treedir, writepath, snapnum_first, snapnum_last);
 
-  // Print CPU and wall clock time
-  std::cout << "Finished.\n";
-  std::cout << "CPU time: "  <<
-      1.0 * (std::clock()-c_start) / CLOCKS_PER_SEC << " s.\n";
-  std::cout << "Wall clock time: " << std::chrono::duration<double>(
-      std::chrono::system_clock::now()-t_start).count() << " s.\n";
+  // Print wall clock time and speedup
+  std::cout << "Time: " << wall_clock.seconds() << " s.\n";
+  std::cout << "Speedup: " << cpu_clock.seconds()/wall_clock.seconds() << ".\n";
 
   return 0;
 }
