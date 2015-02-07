@@ -5,6 +5,7 @@
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
