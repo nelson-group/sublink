@@ -229,8 +229,8 @@ int main(int argc, char** argv)
   std::string simdir(argv[1]);
   std::string treedir(argv[2]);
   std::string writepath(argv[3]);
-  int16_t snapnum_first = atoi(argv[4]);
-  int16_t snapnum_last = atoi(argv[5]);
+  snapnum_type snapnum_first = atoi(argv[4]);
+  snapnum_type snapnum_last = atoi(argv[5]);
 
   // Measure CPU and wall clock (real) time
   WallClock wall_clock;

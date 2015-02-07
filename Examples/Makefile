@@ -7,6 +7,7 @@
 # Executables to build
 EXEC += stellar_assembly
 EXEC += count_mergers
+EXEC += last_major_merger
 EXEC += tree_test
 
 # Define the C++ compiler to use
