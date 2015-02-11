@@ -9,9 +9,20 @@
 #include <vector>
 #include <fstream>
 #include <cassert>
+#include <cmath>
 
 #include "../InputOutput/ReadSubfindHDF5.hpp"
 #include "TreeTypes.hpp"
+
+// Some constants
+static constexpr real_type h = 0.704;
+static constexpr real_type Omega_L = 0.7274;
+static constexpr real_type Omega_m = 0.2726;
+static constexpr real_type Omega_b = 0.0456;
+
+// Some conversions
+static constexpr real_type H0 = h*100000.0/3.086e22;  // in s^-1
+static constexpr real_type H0_Gyr = H0 * (1e9*365.25*86400);  // in Gyr^-1
 
 /** @brief Function to calculate subhalo offsets.
  *
@@ -64,19 +75,14 @@ std::vector<snapnum_type> get_valid_snapnums(
   std::ifstream infile (skipsnaps_filename.data());
   if (!infile.is_open()) {
     std::cerr << "Cannot open file: " << skipsnaps_filename << "\n";
-    assert(false);
+    exit(1);
   }
 
   // Read snapshot numbers to be skipped
   std::vector<snapnum_type> invalid_snapnums;
   std::string line;
-  while (infile >> line) {
-
-    std::cout << line << std::endl;
-
+  while (infile >> line)
     invalid_snapnums.push_back(atoi(line.data()));
-
-  }
   infile.close();
 
   // Add valid snapshots to list
@@ -87,4 +93,53 @@ std::vector<snapnum_type> get_valid_snapnums(
       valid_snapnums.push_back(snapnum);
 
   return valid_snapnums;
+}
+
+/** @brief Read file with snapshot redshifts, one per line.
+ * @return Vector with redshifts.
+ *
+ * We assume that the input file is located inside the working directory.
+ */
+std::vector<real_type> get_redshifts() {
+
+  // Open file with redshifts
+  std::string redshifts_filename = "redshifts_illustris.txt";
+  std::ifstream infile(redshifts_filename.data());
+  if (!infile.is_open()) {
+    std::cerr << "Unable to open file: " << redshifts_filename << std::endl;
+    exit(1);
+  }
+
+  // Read redshifts
+  std::vector<real_type> redshifts_all;
+  std::string line;
+  while (infile >> line)
+    redshifts_all.push_back(atof(line.data()));
+  infile.close();
+
+  return redshifts_all;
+}
+
+/** @brief Return the cosmic time for a given redshift.
+ *
+ * Equation from MvW (Eq. 3.99)
+ */
+real_type t(const real_type z) {
+  return 1.0/H0 * 2.0/(3.0*sqrt(Omega_L)) * log((sqrt(Omega_L*pow(1.0+z, -3.0)) +
+         sqrt(Omega_L*pow(1.0+z, -3.0) + Omega_m))/sqrt(Omega_m));
+}
+
+/** Return cosmic time for a given redshift in Gyr. */
+real_type t_Gyr(const real_type z) {
+  return t(z) / (1e9*365.25*86400);
+}
+
+/** Get cosmic time in Gyr for each snapshot. */
+std::vector<real_type> get_times_Gyr() {
+  auto redshifts_all = get_redshifts();
+  std::vector<real_type> times_all;
+  for (auto z : redshifts_all) {
+    times_all.push_back(t_Gyr(z));
+  }
+  return times_all;
 }
