@@ -55,7 +55,7 @@ void count_mergers_sub(Subhalo sub, std::ofstream& writefile,
         next_prog.data().Mass << "," <<
         next_prog.data().SubhaloSFR << "," <<
         next_prog.data().SubhaloStellarPhotometrics[4] - next_prog.data().SubhaloStellarPhotometrics[5] << "," <<
-        overdensities[next_prog.data().SnapNum][next_prog.data().SubfindID];
+        overdensities[next_prog.data().SnapNum][next_prog.data().SubfindID] << ",";
 
     // Progenitor properties at stellar tmax.
     real_type mstar_stmax_1 = -1;

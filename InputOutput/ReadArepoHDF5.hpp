@@ -37,7 +37,6 @@
 #include <cassert>
 
 #include "H5Cpp_wrapper.hpp"
-#include "../Util/TreeTypes.hpp"
 
 /** @namespace arepo
  * @brief Namespace containing functions to read Arepo snapshot files.
@@ -194,7 +193,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
  */
 template <class T>
 std::vector<T> read_block(const std::string& basedir,
-    const snapnum_type snapnum, const std::string& block_name,
+    const int16_t snapnum, const std::string& block_name,
     const int parttype) {
 
   // Snapshot filename without the file number
