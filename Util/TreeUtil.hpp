@@ -141,12 +141,23 @@ bool after_infall(Subhalo primary, Subhalo secondary) {
       secondary.first_subhalo_in_fof_group());
 }
 
-/** @brief Return true if @a prog lies along the main branch of @a sub.
- * @pre @a sub and @a prog are valid subhalos.
+/** @brief Return true if @a prog lies along the main branch of @a desc.
+ * @pre @a desc and @a prog are valid subhalos.
  */
-bool along_main_branch(Subhalo sub, Subhalo prog) {
-  return (prog.data().SubhaloID >= sub.data().SubhaloID) &&
-         (prog.data().SubhaloID <= sub.data().MainLeafProgenitorID);
+bool along_main_branch(Subhalo desc, Subhalo prog) {
+  return (prog.data().SubhaloID >= desc.data().SubhaloID) &&
+         (prog.data().SubhaloID <= desc.data().MainLeafProgenitorID);
+}
+
+/** @brief Check if @a possible_desc is a descendant of @a possible_prog.
+ * @pre @a desc and @a prog are valid subhalos.
+ *
+ * @note In this implementation a subhalo can be its own descendant.
+ *       Maybe this function should be called "belongs_to_subtree".
+ */
+bool is_descendant(Subhalo desc, Subhalo prog) {
+  return (prog.data().SubhaloID >= desc.data().SubhaloID) &&
+         (prog.data().SubhaloID <= desc.data().LastProgenitorID);
 }
 
 /** Return the progenitor along the main branch which has the largest
@@ -206,4 +217,3 @@ std::pair<Subhalo, Subhalo> get_stmax_pair(Subhalo primary,
     return std::make_pair(Subhalo(), Subhalo());
   return std::make_pair(prog_stmax_1, prog_stmax_2);
 }
-

@@ -5,6 +5,9 @@
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
 
+// Include some extra quantities from the merger trees:
+#define COUNT_MERGERS
+
 #include <iostream>
 #include <vector>
 #include <map>
@@ -204,6 +207,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::vector<snapnum_type> SnapNumAtFormation(nparts, -1);
     std::vector<int8_t> InSitu(nparts, -1);
     std::vector<int8_t> AfterInfall(nparts, -1);
+    std::vector<int8_t> StrippedFromGalaxy(nparts, -1);
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
     // Iterate over stellar particles
@@ -220,27 +224,29 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
       SnapNumAtFormation[pos] = cur_info.snapnum_at_formation;
 
       // If current star particle does not currently belong to any subhalo,
-      // leave InSitu and AfterInfall properties undefined (= -1).
+      // leave most properties undefined (= -1).
       index_type subfind_id = SubfindID[pos];
       if (subfind_id == -1)
         continue;
 
       // If current star particle was formed outside of any subhalo,
-      // define as ex situ and leave AfterInfall property undefined (= -1).
+      // define as ex situ and leave other properties undefined (= -1).
       if (cur_info.subfind_id_at_formation == -1) {
         InSitu[pos] = 0;
         continue;
       }
 
-      // Determine InSitu property using the merger trees
+      // Determine some properties using the merger trees
       auto cur_sub = tree.subhalo(snapnum, subfind_id);
       auto form_sub = tree.subhalo(cur_info.snapnum_at_formation,
                                    cur_info.subfind_id_at_formation);
       if (along_main_branch(cur_sub, form_sub))
         InSitu[pos] = 1;
-      else {
+      else {  // ex situ
+        assert(form_sub.snapnum() < cur_sub.snapnum());
         InSitu[pos] = 0;
         AfterInfall[pos] = static_cast<int>(after_infall(cur_sub, form_sub));
+        StrippedFromGalaxy[pos] = static_cast<int>(!is_descendant(cur_sub, form_sub));
       }
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
@@ -260,6 +266,9 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         H5::PredType::NATIVE_INT8);
     add_array(writefile, AfterInfall, "AfterInfall",
         H5::PredType::NATIVE_INT8);
+    add_array(writefile, StrippedFromGalaxy, "StrippedFromGalaxy",
+        H5::PredType::NATIVE_INT8);
+
     writefile.close();
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 

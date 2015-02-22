@@ -318,7 +318,7 @@ public:
 
     /** Test whether this Subhalo and @a x are equal. */
     bool operator==(const Subhalo& x) const {
-      return (t_ == x.t_) && (snap_ == x.snap_) && (idx_ == x.idx_);
+      return (snap_ == x.snap_) && (idx_ == x.idx_) && (t_ == x.t_);
     }
     /** Test whether this Subhalo is less than @a x in the global order.
      * @note An alternative ordering is given by SubhaloID, which orders
