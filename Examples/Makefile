@@ -9,6 +9,8 @@ EXEC += stellar_assembly
 EXEC += count_mergers
 EXEC += merger_history
 EXEC += tree_test
+EXEC += custom_1
+EXEC += custom_2
 
 # Define the C++ compiler to use
 CXX := $(shell which g++) -std=c++11
