@@ -18,8 +18,8 @@ simple tasks, such as:
 
 The merger trees can also be loaded in "linked-list mode."
 This allows for more flexibility and faster tree traversal,
-but is only supported in C++ (would be too memory-expensive
-in Python).
+but is only supported in C++ (this approach would be too
+memory-expensive in Python).
 
 Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
 
@@ -57,7 +57,7 @@ class _AdjacentRows(object):
     create arrays containing information from the merger tree
     for the specified rows.
     """
-    def __init__(self, treedir, name, row_start, row_end, row_original=None, filenum=-1, keysel=None):
+    def __init__(self, treefile, row_start, row_end, row_original=None, filenum=-1, keysel=None):
         # Public attributes
         self._row_start = row_start
         self._row_end = row_end
@@ -70,29 +70,20 @@ class _AdjacentRows(object):
         self.nrows = row_end - row_start + 1
         locs = slice(row_start, row_end+1)
 
-        # Tree filename
-        if filenum == -1:
-            filename = '%s/%s.hdf5' % (treedir, name)
-        else:
-            filename = '%s/%s.%d.hdf5' % (treedir, name, filenum)
-
         # Find out which fields to add
-        f = h5py.File(filename, 'r')
         if keysel == None:
-            self._fields = f.keys()
+            self._fields = treefile.keys()
         else:
             self._fields = keysel
         
         # Add them
         for field_name in self._fields:
-            setattr(self, field_name, f[field_name][locs])
-
-        f.close()
+            setattr(self, field_name, treefile[field_name][locs])
 
     def _get_subset(self, indices):
         return _Subset(self, indices)
 
-class TreeDB(object):
+class TreeDB:
     """
     Python class to extract information from merger tree files
     in "database mode."
@@ -107,23 +98,58 @@ class TreeDB(object):
     -----------------------------------------------------------------------
     """
 
-    def __init__(self, treedir, name='tree_extended'):
+    def __init__(self, treedir, name='tree_extended', filenum=-1):
         """
+        Create a TreeDB object.
+        
         Parameters
         ----------
         treedir : string
                   Directory where the merger tree files are located.
         name : string, optional
-              Base name of the HDF5 files (usually 'tree_extended').
+               Base name of the HDF5 files, which by default is 'tree_extended'.
+        filenum : int, optional
+               File number of the HDF5 file of interest; -1 refers to the full,
+               "concatenated" tree file.
         """
-        self._treedir = treedir
-        self._name = name
 
         # Check that a few files/paths exist
         for rel_path in ['tree_extended.hdf5', 'offsets']:
-            if not os.path.exists(self._treedir + '/' + rel_path):
-                print 'Path not found: ' + self._treedir + '/' + rel_path
+            if not os.path.exists(treedir + '/' + rel_path):
+                print 'Path not found: ' + treedir + '/' + rel_path
                 sys.exit()
+        if filenum != -1:
+            print 'Currently no support for individual tree files.'
+            sys.exit()
+
+        # Open tree file
+        treefile = h5py.File(treedir + '/tree_extended.hdf5', 'r')
+
+        # Set some attributes
+        self._treedir = treedir
+        self._name = name
+        self._filenum = filenum
+        self._treefile = treefile
+        self._offset_files = {}  # one per snapshot
+
+    def __del__(self):
+        """
+        Close files. All open objects become invalid.
+        """
+        self._treefile.close()
+        for f in self._offset_files.values():
+            f.close()
+
+    def _get_offset_file(self, snapnum):
+        """
+        If necessary, add new entry to offset files dictionary.
+        Otherwise, return existing one.
+        """
+        if snapnum not in self._offset_files.keys():
+            self._offset_files[snapnum] = h5py.File(
+                    '%s/offsets/offsets_%s.hdf5' % (
+                    self._treedir, str(snapnum).zfill(3)), 'r')
+        return self._offset_files[snapnum]
 
     def get_main_branch(self, snapnum, subfind_id, keysel=None):
         """
@@ -140,14 +166,11 @@ class TreeDB(object):
                 should be loaded. By default, all fields are loaded, which
                 can be very time- and memory-expensive.
         """
-        
         # Get row number and other info from offset tables
-        f = h5py.File('%s/offsets/offsets_%s.hdf5' % (
-                self._treedir, str(snapnum).zfill(3)), 'r')
+        f = self._get_offset_file(snapnum)
         rownum = f['RowNum'][subfind_id]
         subhalo_id = f['SubhaloID'][subfind_id]
         main_leaf_progenitor_id = f['MainLeafProgenitorID'][subfind_id]
-        f.close()
         if rownum == -1:
             print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
             return None
@@ -155,7 +178,7 @@ class TreeDB(object):
         # Create branch instance
         row_start = rownum
         row_end = rownum + (main_leaf_progenitor_id - subhalo_id)
-        branch = _AdjacentRows(self._treedir, self._name, row_start, row_end, keysel=keysel)
+        branch = _AdjacentRows(self._treefile, row_start, row_end, keysel=keysel)
         return branch
 
     def get_all_progenitors(self, snapnum, subfind_id, keysel=None):
@@ -176,12 +199,10 @@ class TreeDB(object):
         """
 
         # Get row number and other info from offset tables
-        f = h5py.File('%s/offsets/offsets_%s.hdf5' % (
-                self._treedir, str(snapnum).zfill(3)), 'r')
+        f = self._get_offset_file(snapnum)
         rownum = f['RowNum'][subfind_id]
         subhalo_id = f['SubhaloID'][subfind_id]
         last_progenitor_id = f['LastProgenitorID'][subfind_id]
-        f.close()
         if rownum == -1:
             print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
             return None
@@ -189,7 +210,7 @@ class TreeDB(object):
         # Create branch instance
         row_start = rownum
         row_end = rownum + (last_progenitor_id - subhalo_id)
-        subtree = _AdjacentRows(self._treedir, self._name, row_start, row_end, keysel=keysel)
+        subtree = _AdjacentRows(self._treefile, row_start, row_end, keysel=keysel)
         
         return subtree
 
@@ -209,26 +230,22 @@ class TreeDB(object):
                 can be very time- and memory-expensive.
         """
         # Get row number and other info from offset tables
-        f = h5py.File('%s/offsets/offsets_%s.hdf5' % (
-                self._treedir, str(snapnum).zfill(3)), 'r')
+        f = self._get_offset_file(snapnum)
         rownum = f['RowNum'][subfind_id]
         subhalo_id = f['SubhaloID'][subfind_id]
-        f.close()
         if rownum == -1:
             print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
             return None
 
         # Get root_descendant_id from merger tree
-        f = h5py.File('%s/tree_extended.hdf5' % (self._treedir), 'r')
-        root_descendant_id = f['RootDescendantID'][rownum]
-        f.close()
+        root_descendant_id = self._treefile['RootDescendantID'][rownum]
 
         # We know the row number of the root descendant without searching for it
         row_start = rownum - (subhalo_id - root_descendant_id)
         row_end = rownum
 
         # Create branch instance
-        branch = _AdjacentRows(self._treedir, self._name, row_start, row_end, row_original=rownum, keysel=keysel)
+        branch = _AdjacentRows(self._treefile, row_start, row_end, row_original=rownum, keysel=keysel)
         return branch
 
     def get_direct_progenitors(self, snapnum, subfind_id, **kwargs):
@@ -299,4 +316,3 @@ class TreeDB(object):
             desc_id = subtree.DescendantID[cur_index]
         indices = indices[::-1]  # reverse
         return subtree._get_subset(indices)
-
