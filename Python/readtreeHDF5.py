@@ -1,29 +1,25 @@
 import numpy as np
-import tables
+import h5py
 import sys
 import os
 
 """
 Simple Python script for reading merger tree HDF5 files
 in "database mode," which is optimized for extracting
-quantities along the main branch of a subhalo. This code
-requires PyTables (http://www.pytables.org).
+quantities along the main branch of a subhalo.
 
 For convenience, there are some built-in functions to do
 simple tasks, such as:
 
     get_main_branch
     get_all_progenitors
-    get_all_progenitors_of_root_descendant
-    get_subhalos_between_root_and_given
     get_direct_progenitors
-    get_all_fellow_progenitors
     get_future_branch
 
-There is also a "linked-list mode" which allows for more flexibility,
-implemented in readtreeHDF5_linkedlist.py. However, the linked-list
-approach with Python is extremely memory-expensive, so there is a C++
-version as well, which is recommended for the larger simulations.
+The merger trees can also be loaded in "linked-list mode."
+This allows for more flexibility and faster tree traversal,
+but is only supported in C++ (would be too memory-expensive
+in Python).
 
 Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
 
@@ -39,10 +35,6 @@ print branch.SubhaloMassType[:, 4]
 -------------------------------------------------------------------------
 
 """
-
-##########################################################################
-# --------------------------- DATABASE MODE ------------------------------
-##########################################################################
 
 class _Subset(object):
     """
@@ -85,15 +77,16 @@ class _AdjacentRows(object):
             filename = '%s/%s.%d.hdf5' % (treedir, name, filenum)
 
         # Find out which fields to add
-        f = tables.openFile(filename)
+        f = h5py.File(filename, 'r')
         if keysel == None:
-            self._fields = f.root.__members__
+            self._fields = f.keys()
         else:
             self._fields = keysel
-
+        
         # Add them
         for field_name in self._fields:
-            setattr(self, field_name, f.root._f_getChild(field_name)[locs])
+            setattr(self, field_name, f[field_name][locs])
+
         f.close()
 
     def _get_subset(self, indices):
@@ -121,12 +114,7 @@ class TreeDB(object):
         treedir : string
                   Directory where the merger tree files are located.
         name : string, optional
-              Base name of the HDF5 files:
-                  'tree' : Contains only the minimal fields which are
-                           essential to the merger tree structure.
-                  'tree_extended' : Contains the minimal fields, plus
-                                    (optionally) all subhalo fields from
-                                    the catalogs. See 'keysel' parameter.
+              Base name of the HDF5 files (usually 'tree_extended').
         """
         self._treedir = treedir
         self._name = name
@@ -149,16 +137,16 @@ class TreeDB(object):
         subfind_id : int
         keysel: list of strings or None, optional
                 This argument specifies which fields from the Subfind catalog
-                should be loaded. By default, all columns are loaded, which
-                can be extremely memory-expensive.
+                should be loaded. By default, all fields are loaded, which
+                can be very time- and memory-expensive.
         """
         
         # Get row number and other info from offset tables
-        f = tables.openFile('%s/offsets/offsets_%s.hdf5' % (
-                self._treedir, str(snapnum).zfill(3)))
-        rownum = f.root.RowNum[subfind_id]
-        subhalo_id = f.root.SubhaloID[subfind_id]
-        main_leaf_progenitor_id = f.root.MainLeafProgenitorID[subfind_id]
+        f = h5py.File('%s/offsets/offsets_%s.hdf5' % (
+                self._treedir, str(snapnum).zfill(3)), 'r')
+        rownum = f['RowNum'][subfind_id]
+        subhalo_id = f['SubhaloID'][subfind_id]
+        main_leaf_progenitor_id = f['MainLeafProgenitorID'][subfind_id]
         f.close()
         if rownum == -1:
             print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
@@ -183,16 +171,16 @@ class TreeDB(object):
         subfind_id : int
         keysel: list of strings or None, optional
                 This argument specifies which fields from the Subfind catalog
-                should be loaded. By default, all columns are loaded, which
-                can be extremely memory-expensive.
+                should be loaded. By default, all fields are loaded, which
+                can be very time- and memory-expensive.
         """
 
         # Get row number and other info from offset tables
-        f = tables.openFile('%s/offsets/offsets_%s.hdf5' % (
-                self._treedir, str(snapnum).zfill(3)))
-        rownum = f.root.RowNum[subfind_id]
-        subhalo_id = f.root.SubhaloID[subfind_id]
-        last_progenitor_id = f.root.LastProgenitorID[subfind_id]
+        f = h5py.File('%s/offsets/offsets_%s.hdf5' % (
+                self._treedir, str(snapnum).zfill(3)), 'r')
+        rownum = f['RowNum'][subfind_id]
+        subhalo_id = f['SubhaloID'][subfind_id]
+        last_progenitor_id = f['LastProgenitorID'][subfind_id]
         f.close()
         if rownum == -1:
             print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
@@ -205,46 +193,7 @@ class TreeDB(object):
         
         return subtree
 
-    def get_all_progenitors_of_root_descendant(self, snapnum, subfind_id, keysel=None):
-        """
-        Return the subtree rooted on the root descendant of the given subhalo,
-        i.e. all subhalos with IDs between RootDescendantID and
-        RootDescendant->LastProgenitorID. Note that this includes
-        the given subhalo itself.
-        
-        Parameters
-        ----------
-        snapnum : int
-        subfind_id : int
-        keysel: list of strings or None, optional
-                This argument specifies which fields from the Subfind catalog
-                should be loaded. By default, all columns are loaded, which
-                can be extremely memory-expensive.
-        """
-        # Get row number and other info from offset tables
-        f = tables.openFile('%s/offsets/offsets_%s.hdf5' % (
-                self._treedir, str(snapnum).zfill(3)))
-        rownum = f.root.RowNum[subfind_id]
-        subhalo_id = f.root.SubhaloID[subfind_id]
-        f.close()
-        if rownum == -1:
-            print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
-            return None
-
-        # Get root_descendant_id from merger tree
-        f = tables.openFile('%s/tree_extended.hdf5' % (self._treedir))
-        root_descendant_id = f.root.RootDescendantID[rownum]
-
-        # We know the row number of the root descendant without searching for it
-        row_start = rownum - (subhalo_id - root_descendant_id)
-        row_end = f.root.LastProgenitorID[row_start]
-        f.close()
-
-        # Create branch instance
-        branch = _AdjacentRows(self._treedir, self._name, row_start, row_end, row_original=rownum, keysel=keysel)
-        return branch
-
-    def get_subhalos_between_root_and_given(self, snapnum, subfind_id, keysel=None):
+    def _get_subhalos_between_root_and_given(self, snapnum, subfind_id, keysel=None):
         """
         Return all subhalos with IDs between RootDescendantID and
         SubhaloID (of the given subhalo), in a depth-first fashion.
@@ -256,22 +205,22 @@ class TreeDB(object):
         subfind_id : int
         keysel: list of strings or None, optional
                 This argument specifies which fields from the Subfind catalog
-                should be loaded. By default, all columns are loaded, which
-                can be extremely memory-expensive.
+                should be loaded. By default, all fields are loaded, which
+                can be very time- and memory-expensive.
         """
         # Get row number and other info from offset tables
-        f = tables.openFile('%s/offsets/offsets_%s.hdf5' % (
-                self._treedir, str(snapnum).zfill(3)))
-        rownum = f.root.RowNum[subfind_id]
-        subhalo_id = f.root.SubhaloID[subfind_id]
+        f = h5py.File('%s/offsets/offsets_%s.hdf5' % (
+                self._treedir, str(snapnum).zfill(3)), 'r')
+        rownum = f['RowNum'][subfind_id]
+        subhalo_id = f['SubhaloID'][subfind_id]
         f.close()
         if rownum == -1:
             print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
             return None
 
         # Get root_descendant_id from merger tree
-        f = tables.openFile('%s/tree_extended.hdf5' % (self._treedir))
-        root_descendant_id = f.root.RootDescendantID[rownum]
+        f = h5py.File('%s/tree_extended.hdf5' % (self._treedir), 'r')
+        root_descendant_id = f['RootDescendantID'][rownum]
         f.close()
 
         # We know the row number of the root descendant without searching for it
@@ -293,8 +242,8 @@ class TreeDB(object):
         subfind_id : int
         keysel: list of strings or None, optional
                 This argument specifies which fields from the Subfind catalog
-                should be loaded. By default, all columns are loaded, which
-                can be extremely memory-expensive.
+                should be loaded. By default, all fields are loaded, which
+                can be very time- and memory-expensive.
         """
 
         # Make sure that some fields are included.
@@ -311,36 +260,6 @@ class TreeDB(object):
         indices = subtree.DescendantID == subhalo_id
         return subtree._get_subset(indices)
 
-    def get_all_fellow_progenitors(self, snapnum, subfind_id, **kwargs):
-        """
-        Return all the subhalos that will merge into the same object
-        at any point in the future, i.e. those subhalos for which
-        RootDescendantID equals RootDescendantID of the current subhalo.
-
-        Parameters
-        ----------
-        snapnum : int
-        subfind_id : int
-        keysel: list of strings or None, optional
-                This argument specifies which fields from the Subfind catalog
-                should be loaded. By default, all columns are loaded, which
-                can be extremely memory-expensive.
-        """
-
-        # Make sure that some fields are included.
-        include_fields = ['RootDescendantID']
-        if 'keysel' in kwargs:
-            tmp_list = kwargs['keysel']
-            for field_name in include_fields:
-                if field_name not in tmp_list:
-                    tmp_list.append(field_name)
-            kwargs['keysel'] = tmp_list
-
-        subtree = self.get_all_progenitors_of_root_descendant(snapnum, subfind_id, **kwargs)
-        root_desc_id = subtree.RootDescendantID[subtree._index_given_sub]  # unique ID of root descendant
-        indices = subtree.RootDescendantID == root_desc_id
-        return subtree._get_subset(indices)
-
     def get_future_branch(self, snapnum, subfind_id, **kwargs):
         """
         Return the subhalos found in a sort of "forward" branch between
@@ -354,8 +273,8 @@ class TreeDB(object):
         subfind_id : int
         keysel: list of strings or None, optional
                 This argument specifies which fields from the Subfind catalog
-                should be loaded. By default, all columns are loaded, which
-                can be extremely memory-expensive.
+                should be loaded. By default, all fields are loaded, which
+                can be very time- and memory-expensive.
         """
 
         # Make sure that some fields are included.
@@ -367,7 +286,7 @@ class TreeDB(object):
                     tmp_list.append(field_name)
             kwargs['keysel'] = tmp_list
 
-        subtree = self.get_subhalos_between_root_and_given(snapnum, subfind_id, **kwargs)
+        subtree = self._get_subhalos_between_root_and_given(snapnum, subfind_id, **kwargs)
         # Unfortunately, there are no shortcuts in this case and we must
         # proceed iteratively. This is almost at the limit of what one
         # can do when reading trees in "database mode."
