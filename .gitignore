@@ -27,6 +27,7 @@ sync_local.sh
 # Eclipse stuff
 .cproject
 .project
+.pydevproject
 .settings/*
 
 # Doxygen documentation
