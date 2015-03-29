@@ -266,7 +266,7 @@ class TreeDB:
         # Make sure that some fields are included.
         include_fields = ['SubhaloID', 'DescendantID']
         if 'keysel' in kwargs:
-            tmp_list = kwargs['keysel']
+            tmp_list = kwargs['keysel'][:]  # make copy
             for field_name in include_fields:
                 if field_name not in tmp_list:
                     tmp_list.append(field_name)
@@ -297,7 +297,7 @@ class TreeDB:
         # Make sure that some fields are included.
         include_fields = ['SubhaloID', 'DescendantID', 'RootDescendantID']
         if 'keysel' in kwargs:
-            tmp_list = kwargs['keysel']
+            tmp_list = kwargs['keysel'][:]  # make copy
             for field_name in include_fields:
                 if field_name not in tmp_list:
                     tmp_list.append(field_name)
