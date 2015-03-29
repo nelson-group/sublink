@@ -37,6 +37,7 @@
 #include <cassert>
 
 #include "H5Cpp_wrapper.hpp"
+#include "../Util/TreeTypes.hpp"
 
 /** @namespace arepo
  * @brief Namespace containing functions to read Arepo snapshot files.
@@ -185,7 +186,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
  *   positions) by letting @a T be a user-defined type, such as a struct
  *   with coordinates x,y,z.
  *
- * @li The particle IDs have type uint64. However, the attributes
+ * @li In Illustris, the particle IDs have type uint64. However, the attributes
  *   @c NumPart_ThisFile and @c NumPart_Total from the Header have types
  *   int32 and uint32, respectively, which results in incorrect numbers
  *   for the larger simulations. The function implementation does not rely
@@ -215,7 +216,7 @@ std::vector<T> read_block(const std::string& basedir,
   // our results).
   auto npart_total_vect = get_vector_attribute<uint32_t>(file_name,
       "NumPart_Total");
-  uint64_t npart_total = npart_total_vect[parttype];
+  part_id_type npart_total = npart_total_vect[parttype];
 
   // Allocate memory for output vector (npart_total is actually
   // a lower bound; see comments above)
@@ -234,7 +235,7 @@ std::vector<T> read_block(const std::string& basedir,
     // Get number of particles according to file header (just to check)
     auto npart_thisfile_vect = get_vector_attribute<int32_t>(file_name,
         "NumPart_ThisFile");
-    uint64_t npart_thisfile = npart_thisfile_vect[parttype];
+    part_id_type npart_thisfile = npart_thisfile_vect[parttype];
     if (data_thisfile.size() != npart_thisfile)
       std::cerr << "BAD: number of particles in file " << filenum <<
         " does not match with header.\n";

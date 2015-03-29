@@ -11,8 +11,8 @@
 ##SBATCH --exclusive
 #SBATCH --mem=30000
 
-## OMP_NUM_THREADS controls the number of threads your application use
-## This variable cat be set by the following command :
+## OMP_NUM_THREADS controls the number of threads your application uses
+## This variable cat be set by the following command:
 export OMP_NUM_THREADS=$SLURM_NTASKS_PER_NODE
 
 TRACKING=Galaxies
@@ -21,6 +21,7 @@ SIMULATION=L75n910FP
 # ----------------------- FIND DESCENDANTS
 
 BASEDIR=/n/hernquistfs1/Illustris/Runs/${SIMULATION}/output
+SKIP_SUFFIX=
 if [ $SIMULATION = L75n1820FP ]; then
   SKIP_FILENAME=skip_snapshots/skip_snapshots${SKIP_SUFFIX}_${SIMULATION}.txt
 else
@@ -36,7 +37,6 @@ SNAPNUM_FIRST=0
 SNAPNUM_LAST=135
 SNAPNUM_START=0
 SNAPNUM_END=135
-SKIP_SUFFIX=
 
 #~ # First pass
 #~ PASS=first

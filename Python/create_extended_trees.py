@@ -32,6 +32,11 @@ def create_extended_trees(treedir, basedir, snapnum_last):
         # Add "minimal" fields, one by one
         for field_name in f_minimal['Tree'].dtype.names:
             tmp_array = f_minimal['Tree'][field_name][:]
+
+            # Very ad hoc: snapnum type should be int16
+            if field_name == 'SnapNum':
+                tmp_array = tmp_array.astype(np.int16)
+
             f_extended.create_dataset(field_name, data=tmp_array)
 
         # Add additional fields (assume that info inside $TREEDIR/columns is complete).

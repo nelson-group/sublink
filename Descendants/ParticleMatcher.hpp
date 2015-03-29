@@ -237,7 +237,7 @@ public:
 
       // Reserve space in memory when dealing with DM
       if (tracking_scheme == "Subhalos") {
-        uint64_t npart_in_subhalos = 0;
+        part_id_type npart_in_subhalos = 0;
         for (uint32_t i = 0; i < nsubs; ++i)
           npart_in_subhalos += sub_len_parttype[0][i];
         pm_->data_.reserve(pm_->data_.size() + npart_in_subhalos);
@@ -258,10 +258,10 @@ public:
           for (uint32_t sub_uindex = 0; sub_uindex < nsubs; ++sub_uindex) {
             part_id_type snap_count = sub_offset_parttype[l][sub_uindex];
             for (uint32_t i = 0; i < sub_len_parttype[l][sub_uindex]; ++i) {
-              pm_->data_.emplace_back(ParticleInfo(
+              pm_->data_.emplace_back(
                   part_id[snap_count],
                   sub_uindex,
-                  std::pow(static_cast<real_type>(i+1), alpha_weight)));
+                  std::pow(static_cast<real_type>(i+1), alpha_weight));
               ++snap_count;
             }
           }
@@ -276,11 +276,11 @@ public:
             for (uint32_t i = 0; i < sub_len_parttype[l][sub_uindex]; ++i) {
               // Only consider star-forming elements
               if (part_sfr[snap_count] > 0) {
-                pm_->data_.emplace_back(ParticleInfo(
+                pm_->data_.emplace_back(
                     part_id[snap_count],
                     sub_uindex,
                     part_mass[snap_count] * std::pow(
-                        static_cast<real_type>(i+1), alpha_weight)));
+                        static_cast<real_type>(i+1), alpha_weight));
                 sub_len_[sub_uindex] += 1;
                 sub_mass_[sub_uindex] += part_mass[snap_count];
               }
@@ -294,11 +294,11 @@ public:
           for (uint32_t sub_uindex = 0; sub_uindex < nsubs; ++sub_uindex) {
             part_id_type snap_count = sub_offset_parttype[l][sub_uindex];
             for (uint32_t i = 0; i < sub_len_parttype[l][sub_uindex]; ++i) {
-              pm_->data_.emplace_back(ParticleInfo(
+              pm_->data_.emplace_back(
                   part_id[snap_count],
                   sub_uindex,
                   part_mass[snap_count] * std::pow(
-                      static_cast<real_type>(i+1), alpha_weight)));
+                      static_cast<real_type>(i+1), alpha_weight));
               sub_len_[sub_uindex] += 1;
               sub_mass_[sub_uindex] += part_mass[snap_count];
               ++snap_count;
@@ -370,7 +370,7 @@ private:
     std::cout << "Calculating scores...\n";
     wall_clock.start();
     std::vector<std::vector<Candidate>> scores(snap1_->nsubs());
-    for (auto data_it = data_.begin(); data_it != data_.end(); ++data_it) {
+    for (auto data_it = data_.begin(); data_it+1 < data_.end(); ++data_it) {
 
       // Only care about repeated IDs
       if (data_it->id != (data_it+1)->id)
@@ -382,7 +382,7 @@ private:
       auto& cur_cands = scores[sub_index1];
       auto it = std::find(cur_cands.begin(), cur_cands.end(), sub_index2);
       if (it == cur_cands.end())
-        cur_cands.emplace_back(Candidate(sub_index2, data_it->weight));
+        cur_cands.emplace_back(sub_index2, data_it->weight);
       else
         it->add_to_score(data_it->weight);
     }

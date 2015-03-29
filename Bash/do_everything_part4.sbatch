@@ -11,8 +11,8 @@
 #SBATCH -p hernquist
 #SBATCH --mem=3750
 
-## OMP_NUM_THREADS controls the number of threads your application use
-## This variable cat be set by the following command :
+## OMP_NUM_THREADS controls the number of threads your application uses
+## This variable cat be set by the following command:
 export OMP_NUM_THREADS=$SLURM_NTASKS_PER_NODE
 
 # Recommended memory:
