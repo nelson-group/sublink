@@ -36,4 +36,9 @@ struct FloatArray {
   reference       operator[](std::size_t i)       { return elem[i]; }
   const_reference operator[](std::size_t i) const { return elem[i]; }
 
+  /** Return the number of elements in this FloatArray. */
+  static constexpr int size() {
+    return N;
+  }
+
 };

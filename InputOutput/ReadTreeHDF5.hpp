@@ -85,6 +85,11 @@ public:
     real_type SubhaloSFR;
     FloatArray<8> SubhaloStellarPhotometrics;
 #endif
+#ifdef INFALL_CATALOG
+    real_type SubhaloMass;
+    FloatArray<6> SubhaloMassType;
+    real_type SubhaloVmax;
+#endif
 
     /** Constructor. */
     DataFormat(sub_id_type SubhaloID_,
@@ -110,6 +115,12 @@ public:
                real_type SubhaloSFR_,
                FloatArray<8>& SubhaloStellarPhotometrics_
 #endif
+#ifdef INFALL_CATALOG
+               ,
+               real_type SubhaloMass_,
+               FloatArray<6>& SubhaloMassType_,
+               real_type SubhaloVmax_
+#endif
                )
         : SubhaloID(SubhaloID_),
           SubhaloIDRaw(SubhaloIDRaw_),
@@ -133,6 +144,12 @@ public:
           SubhaloMassType(SubhaloMassType_),
           SubhaloSFR(SubhaloSFR_),
           SubhaloStellarPhotometrics(SubhaloStellarPhotometrics_)
+#endif
+#ifdef INFALL_CATALOG
+          ,
+          SubhaloMass(SubhaloMass_),
+          SubhaloMassType(SubhaloMassType_),
+          SubhaloVmax(SubhaloVmax_)
 #endif
           {
     }
@@ -659,6 +676,11 @@ private:
     auto SubhaloSFR = read_dataset<real_type>(treefilename, "SubhaloSFR");
     auto SubhaloStellarPhotometrics = read_dataset<FloatArray<8>>(treefilename, "SubhaloStellarPhotometrics");
 #endif
+#ifdef INFALL_CATALOG
+    auto SubhaloMass = read_dataset<real_type>(treefilename, "SubhaloMass");
+    auto SubhaloMassType = read_dataset<FloatArray<6>>(treefilename, "SubhaloMassType");
+    auto SubhaloVmax = read_dataset<real_type>(treefilename, "SubhaloVmax");
+#endif
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
     // Create internal_subhalo objects, storing pointers to them in a vector.
@@ -691,6 +713,12 @@ private:
               SubhaloMassType[rownum],
               SubhaloSFR[rownum],
               SubhaloStellarPhotometrics[rownum]
+#endif
+#ifdef INFALL_CATALOG
+              ,
+              SubhaloMass[rownum],
+              SubhaloMassType[rownum],
+              SubhaloVmax[rownum]
 #endif
               )));
     }

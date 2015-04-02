@@ -8,6 +8,7 @@
 EXEC += stellar_assembly
 EXEC += count_mergers
 EXEC += merger_history
+EXEC += infall_catalog
 EXEC += tree_test
 EXEC += custom_1
 EXEC += custom_2

@@ -41,7 +41,6 @@ std::vector<T> read_dataset(const std::string& file_name,
 
   // Read data
   std::vector<T> retval(dimsm[0]);  // Output vector is 1D.
-//  dataset.read(&retval[0], dataset.getDataType(), mem_space, file_space);
   dataset.read(retval.data(), dataset.getDataType(), mem_space, file_space);
 
   file.close();
@@ -70,5 +69,32 @@ void add_array(H5::H5File& file, const std::vector<T>& array,
 
   // Write to dataset using default memory space
   dataset.write(array.data(), datatype, dataspace);
-  }
+}
+
+/** @brief Function to add a new two-dimensional array to an open HDF5 file.
+ * @tparam T Must be the FloatArray type defined in TreeTypes.hpp,
+ *           or at least something that defines a size().
+ * @note Byte order is little-endian by default.
+ */
+template <typename T>
+void add_array_2d(H5::H5File& file, const std::vector<T>& array,
+    const std::string& array_name, H5::DataType datatype) {
+
+  // Only proceed if array is non-empty
+  if (array.size() == 0)
+    return;
+
+  // Define (two-dimensional) dataspace
+  hsize_t dimsf[2];  // dataset dimensions
+  dimsf[0] = array.size();
+  dimsf[1] = T::size();  // e.g., FloatArray<6>::size() == 6
+  H5::DataSpace dataspace(2, dimsf);  // rank 2
+
+  // Create dataset
+  H5::DataSet dataset = file.createDataSet(array_name, datatype, dataspace);
+
+  // Write to dataset using default memory space
+  dataset.write(array.data(), datatype, dataspace);
+}
+
 
