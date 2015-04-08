@@ -59,6 +59,18 @@ void infall_catalog(const std::string& basedir, const std::string& treedir,
   std::vector<real_type> SubhaloMassLastIdentified;
   std::vector<FloatArray<6>> SubhaloMassTypeLastIdentified;
   std::vector<real_type> SubhaloVmaxLastIdentified;
+  // Properties at last virial crossing (R200):
+  std::vector<snapnum_type> SnapNumLastCrossing;
+  std::vector<index_type> SubfindIDLastCrossing;
+  std::vector<real_type> SubhaloMassLastCrossing;
+  std::vector<FloatArray<6>> SubhaloMassTypeLastCrossing;
+  std::vector<real_type> SubhaloVmaxLastCrossing;
+  // Properties at first virial crossing (R200):
+  std::vector<snapnum_type> SnapNumFirstCrossing;
+  std::vector<index_type> SubfindIDFirstCrossing;
+  std::vector<real_type> SubhaloMassFirstCrossing;
+  std::vector<FloatArray<6>> SubhaloMassTypeFirstCrossing;
+  std::vector<real_type> SubhaloVmaxFirstCrossing;
 
   // Store offsets here
   std::vector<uint32_t> GroupFirstSub(ngroups, 0);
