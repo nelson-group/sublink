@@ -25,11 +25,7 @@ def read_block(basedir, snapnum, field_name, group_name):
     skip = 0
     doneflag = False
     while not doneflag:
-        #~ filename = (basedir + '/groups_%s/groups_%s.%d.hdf5' %
-                    #~ (str(snapnum).zfill(3), str(snapnum).zfill(3), filenum))
-
-        simdir = basedir.split('/output')[0]
-        filename = (simdir + '/postprocessing/groups_new/groups_%s/groups_%s.%d.hdf5' %
+        filename = (basedir + '/groups_%s/groups_%s.%d.hdf5' %
                     (str(snapnum).zfill(3), str(snapnum).zfill(3), filenum))
 
         # Only proceed if file exists
@@ -137,21 +133,16 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
         filename = treedir + '/tree.' + str(filenum) + '.hdf5'
 
     # Have a peek at first file from last snapshot and
-    # get info for all subhalo quantities, as well as a few select
-    # FoF group quantities.
+    # get info for all subhalo and FoF group quantities.
     # (Note that 'shape' is only used used to retrieve info about the second
     # dimension of the field, if any.)
-
-    #~ groupfilename = (basedir + '/groups_%s/groups_%s.0.hdf5' %
-                #~ (str(snapnum_last).zfill(3), str(snapnum_last).zfill(3)))
-
-    simdir = basedir.split('/output')[0]
-    groupfilename = (simdir + '/postprocessing/groups_new/groups_%s/groups_%s.%d.hdf5' %
-                (str(snapnum_last).zfill(3), str(snapnum_last).zfill(3), 0))
+    groupfilename = (basedir + '/groups_%s/groups_%s.0.hdf5' %
+                (str(snapnum_last).zfill(3), str(snapnum_last).zfill(3)))
 
     f = h5py.File(groupfilename, 'r')
     subhalo_quantities = f['Subhalo'].keys()
-    group_quantities = ['Group_M_Crit200', 'Group_M_Mean200', 'Group_M_TopHat200']
+    #group_quantities = ['Group_M_Crit200', 'Group_M_Mean200', 'Group_M_TopHat200']
+    group_quantities = f['Group'].keys()
     field_name_list = subhalo_quantities + group_quantities
     group_name_list = (len(subhalo_quantities) * ['Subhalo'] +
                        len(group_quantities) * ['Group'])
