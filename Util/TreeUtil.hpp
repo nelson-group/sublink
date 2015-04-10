@@ -16,10 +16,11 @@
 typedef Tree::Snapshot Snapshot;
 typedef Tree::Subhalo Subhalo;
 
-real_type periodic_dist(Subhalo sub1, Subhalo sub2, real_type box_size) {
+real_type periodic_dist(const FloatArray<3>& pos1, const FloatArray<3>& pos2,
+    const real_type box_size) {
   real_type d2 = 0;
   for (int i = 0; i < 3; ++i) {
-    real_type dx = sub2.data().SubhaloPos[i] - sub1.data().SubhaloPos[i];
+    real_type dx = pos2[i] - pos1[i];
     if (std::abs(dx) > 0.5 * box_size)
       dx = dx - std::copysign(box_size, dx);
     d2 += dx*dx;
@@ -90,86 +91,47 @@ std::pair<Subhalo, Subhalo> get_infall_pair(Subhalo primary,
 }
 
 /** @brief Get the progenitors of @a primary and @a secondary at
- *         the moment of the last virial crossing.
+ *         the moment of virial crossing.
  * @param[in] primary The primary subhalo.
  * @param[in] secondary The secondary subhalo.
+ * @param[in] box_size Size of the cosmological box in ckpc/h.
+ * @param[in] last_crossing If true, get info about the last (latest)
+ *     virial crossing; otherwise get the first (earliest) one.
  * @return A pair with the main branch progenitors of @a primary
- *         and @a secondary at the latest snapshot such that
- *         @a primary and @a secondary are separated by more than
- *         @a R_{200,crit} of the parent halo of @a primary.
+ *         and @a secondary just before @a secondary enters the
+ *         virial radius (more exactly, R200Crit) of the parent
+ *         FoF group of @a primary.
  *         Return a pair with invalid subhalos if one
  *         or both branches are truncated.
  *
  * @pre @a primary and @a secondary are valid subhalos.
  * @post new(@a primary).snapnum() == new(@a secondary).snapnum()
  */
-std::pair<Subhalo, Subhalo> get_pair_last_crossing(Subhalo primary,
-    Subhalo secondary, real_type box_size) {
-  assert(primary.is_valid() && secondary.is_valid());
-
-  while (true) {
-    // If secondary branch is truncated, return invalid Subhalos.
-    if (!secondary.is_valid())
-      return std::make_pair(Subhalo(), Subhalo());
-
-    // If primary branch is truncated, return invalid Subhalos.
-    auto cur_snapnum = secondary.snapnum();
-    primary = back_in_time(primary, cur_snapnum);
-    if (!primary.is_valid())
-      return std::make_pair(Subhalo(), Subhalo());
-
-    // If primary skipped this snapshot, or is for some other reason found
-    // at an earlier snapshot, "increment" secondary and try again.
-    if (primary.snapnum() != cur_snapnum) {
-      secondary = secondary.first_progenitor();
-      continue;
-    }
-    // If we got here, both primary and secondary are valid Subhalos at
-    // the same snapshot. If they are separated by more than R_{200,crit},
-    // we have reached the moment of the last virial crossing.
-    if (periodic_dist(primary, secondary, box_size) > primary.data().Group_R_Crit200)
-      return std::make_pair(primary, secondary);
-
-    // Increment secondary
-    secondary = secondary.first_progenitor();
-  }
-  assert(false);
-}
-
-/** @brief Get the progenitors of @a primary and @a secondary at
- *         the moment of the first virial crossing.
- * @param[in] primary The primary subhalo.
- * @param[in] secondary The secondary subhalo.
- * @return A pair with the main branch progenitors of @a primary
- *         and @a secondary at the earliest snapshot such that
- *         @a primary and @a secondary are separated by more than
- *         @a R_{200,crit} of the parent halo of @a primary.
- *         Return a pair with invalid subhalos if one
- *         or both branches are truncated.
- *
- * @pre @a primary and @a secondary are valid subhalos.
- * @post new(@a primary).snapnum() == new(@a secondary).snapnum()
- */
-std::pair<Subhalo, Subhalo> get_pair_first_crossing(Subhalo primary,
-    Subhalo secondary, real_type box_size) {
+std::pair<Subhalo, Subhalo> get_pair_virial_crossing(Subhalo primary,
+    Subhalo secondary, real_type box_size, bool last_crossing = true) {
   assert(primary.is_valid() && secondary.is_valid());
 
   // By default return invalid Subhalos.
   auto sub_pair = std::make_pair(Subhalo(), Subhalo());
 
+  // If subhalo is initially outside of R200Crit, there's nothing to do.
+  if (periodic_dist(primary.data().GroupPos, secondary.data().SubhaloPos, box_size) > primary.data().Group_R_Crit200) {
+    return sub_pair;  // invalid Subhalos
+  }
+
   // Keep track of subhalo separation with respect to R200Crit.
   bool inside_r200 = true;
 
   while (true) {
-    // If secondary branch is truncated, return invalid Subhalos.
+    // If secondary branch ends, break.
     if (!secondary.is_valid())
-      return std::make_pair(Subhalo(), Subhalo());
+      break;
 
-    // If primary branch is truncated, return invalid Subhalos.
+    // If primary branch ends, break.
     auto cur_snapnum = secondary.snapnum();
     primary = back_in_time(primary, cur_snapnum);
     if (!primary.is_valid())
-      return std::make_pair(Subhalo(), Subhalo());
+      break;
 
     // If primary skipped this snapshot, or is for some other reason found
     // at an earlier snapshot, "increment" secondary and try again.
@@ -179,10 +141,16 @@ std::pair<Subhalo, Subhalo> get_pair_first_crossing(Subhalo primary,
     }
 
     // If we got here, both primary and secondary are valid Subhalos at
-    // the same snapshot.
-    if (periodic_dist(primary, secondary, box_size) > primary.data().Group_R_Crit200) {
+    // the same snapshot. Check if secondary is outside of R200Crit.
+    if (periodic_dist(primary.data().GroupPos, secondary.data().SubhaloPos, box_size) > primary.data().Group_R_Crit200) {
+      // If we're only interested in the last (latest) crossing, we're finished.
+      if (last_crossing) {
+        sub_pair = std::make_pair(primary, secondary);
+        break;
+      }
+      // Otherwise, check if subhalo was previously inside R200Crit.
       if (inside_r200) {
-        // Overwrite info from later (time-wise) virial crossing
+        // Overwrite info about earliest virial crossing
         sub_pair = std::make_pair(primary, secondary);
         inside_r200 = false;
       }
@@ -190,11 +158,9 @@ std::pair<Subhalo, Subhalo> get_pair_first_crossing(Subhalo primary,
     else {
       inside_r200 = true;
     }
-
     // Increment secondary
     secondary = secondary.first_progenitor();
   }
-
   return sub_pair;
 }
 

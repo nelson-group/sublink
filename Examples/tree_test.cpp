@@ -8,6 +8,9 @@
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
 
+// Include last_progenitor, main_leaf_progenitor, and root_descendant
+#define EXTRA_POINTERS
+
 #include "../InputOutput/ReadTreeHDF5.hpp"
 
 int main()
@@ -37,13 +40,6 @@ int main()
       cur_sub = cur_sub.first_progenitor();
     if (cur_sub != orig_sub.main_leaf_progenitor())
       std::cerr << "Main leaf progenitor does not match!\n";
-
-    // Find main leaf progenitor using branch iterator and compare
-    // with tree value.
-    for (auto bit = orig_sub.branch_begin(); bit != orig_sub.branch_end(); ++bit)
-      cur_sub = *bit;
-    if (cur_sub != orig_sub.main_leaf_progenitor())
-      std::cerr << "Main leaf progenitor does not match with branch iterator!\n";
 
     // Print some output occasionally
     ++count;

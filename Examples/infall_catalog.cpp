@@ -14,6 +14,7 @@
 #include <fstream>
 #include <sstream>
 
+#include "../InputOutput/ReadArepoHDF5.hpp"
 #include "../InputOutput/ReadSubfindHDF5.hpp"
 #include "../InputOutput/ReadTreeHDF5.hpp"
 #include "../InputOutput/GeneralHDF5.hpp"
@@ -25,6 +26,15 @@
  */
 void infall_catalog(const std::string& basedir, const std::string& treedir,
     const std::string& writedir, const snapnum_type snapnum_last) {
+
+  // Get box size in ckpc/h; note type conversion
+  std::stringstream tmp_stream;
+  tmp_stream << basedir << "/snapdir_" <<
+      std::setfill('0') << std::setw(3) << snapnum_last << "/snap_" <<
+      std::setfill('0') << std::setw(3) << snapnum_last << ".0.hdf5";
+  std::string file_name = tmp_stream.str();
+  real_type box_size = static_cast<real_type>(
+      arepo::get_scalar_attribute<double>(file_name, "BoxSize"));
 
   // Load merger tree
   std::cout << "Loading merger tree...\n";
@@ -76,6 +86,9 @@ void infall_catalog(const std::string& basedir, const std::string& treedir,
   std::vector<uint32_t> GroupFirstSub(ngroups, 0);
   std::vector<uint32_t> GroupNsubs(ngroups, 0);
 
+  // For cases where infall is well defined but R200Crit is not:
+  FloatArray<6> invalid_masstype = {-1, -1, -1, -1, -1, -1};
+
   // Iterate over FoF groups at z=0
   std::cout << "Iterating over FoF groups...\n";
   wall_clock.start();
@@ -122,16 +135,56 @@ void infall_catalog(const std::string& basedir, const std::string& treedir,
 
         // If got here, we have found a new, valid "infall object".
         GroupIndex.push_back(group_index);
+
         SnapNumInfall.push_back(snapnum_infall);
         SubfindIDInfall.push_back(infall_pair.second.index());
         SubhaloMassInfall.push_back(infall_pair.second.data().SubhaloMass);
         SubhaloMassTypeInfall.push_back(infall_pair.second.data().SubhaloMassType);
         SubhaloVmaxInfall.push_back(infall_pair.second.data().SubhaloVmax);
+
         SnapNumLastIdentified.push_back(cur_sub.snapnum());
         SubfindIDLastIdentified.push_back(cur_sub.index());
         SubhaloMassLastIdentified.push_back(cur_sub.data().SubhaloMass);
         SubhaloMassTypeLastIdentified.push_back(cur_sub.data().SubhaloMassType);
         SubhaloVmaxLastIdentified.push_back(cur_sub.data().SubhaloVmax);
+
+        // Add info about moment of last (latest) virial crossing
+        auto pair_last_crossing = get_pair_virial_crossing(orig_sub, cur_sub,
+            box_size, true);
+        auto snapnum_last_crossing = pair_last_crossing.second.snapnum();
+        if (snapnum_last_crossing == -1) {
+          SnapNumLastCrossing.push_back(-1);
+          SubfindIDLastCrossing.push_back(-1);
+          SubhaloMassLastCrossing.push_back(-1);
+          SubhaloMassTypeLastCrossing.push_back(invalid_masstype);
+          SubhaloVmaxLastCrossing.push_back(-1);
+        }
+        else {
+          SnapNumLastCrossing.push_back(snapnum_last_crossing);
+          SubfindIDLastCrossing.push_back(pair_last_crossing.second.index());
+          SubhaloMassLastCrossing.push_back(pair_last_crossing.second.data().SubhaloMass);
+          SubhaloMassTypeLastCrossing.push_back(pair_last_crossing.second.data().SubhaloMassType);
+          SubhaloVmaxLastCrossing.push_back(pair_last_crossing.second.data().SubhaloVmax);
+        }
+
+        // Add info about moment of first (earliest) virial crossing
+        auto pair_first_crossing = get_pair_virial_crossing(orig_sub, cur_sub,
+            box_size, false);
+        auto snapnum_first_crossing = pair_first_crossing.second.snapnum();
+        if (snapnum_first_crossing == -1) {
+          SnapNumFirstCrossing.push_back(-1);
+          SubfindIDFirstCrossing.push_back(-1);
+          SubhaloMassFirstCrossing.push_back(-1);
+          SubhaloMassTypeFirstCrossing.push_back(invalid_masstype);
+          SubhaloVmaxFirstCrossing.push_back(-1);
+        }
+        else {
+          SnapNumFirstCrossing.push_back(snapnum_first_crossing);
+          SubfindIDFirstCrossing.push_back(pair_first_crossing.second.index());
+          SubhaloMassFirstCrossing.push_back(pair_first_crossing.second.data().SubhaloMass);
+          SubhaloMassTypeFirstCrossing.push_back(pair_first_crossing.second.data().SubhaloMassType);
+          SubhaloVmaxFirstCrossing.push_back(pair_first_crossing.second.data().SubhaloVmax);
+        }
 
         // Add to counter
         ++subhalo_count;
@@ -149,7 +202,7 @@ void infall_catalog(const std::string& basedir, const std::string& treedir,
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
   // Output filename
-  std::stringstream tmp_stream;
+  tmp_stream.str("");
   tmp_stream << writedir << "/infall_catalog_" <<
       std::setfill('0') << std::setw(3) << snapnum_last << ".hdf5";
   std::string writefilename = tmp_stream.str();
@@ -159,16 +212,31 @@ void infall_catalog(const std::string& basedir, const std::string& treedir,
   wall_clock.start();
   H5::H5File writefile(writefilename, H5F_ACC_TRUNC);
   add_array(writefile, GroupIndex, "GroupIndex", H5::PredType::NATIVE_INT32);
+
   add_array(writefile, SnapNumInfall, "SnapNumInfall", H5::PredType::NATIVE_INT16);
   add_array(writefile, SubfindIDInfall, "SubfindIDInfall", H5::PredType::NATIVE_INT32);
   add_array(writefile, SubhaloMassInfall, "SubhaloMassInfall", H5::PredType::NATIVE_FLOAT);
   add_array_2d(writefile, SubhaloMassTypeInfall, "SubhaloMassTypeInfall", H5::PredType::NATIVE_FLOAT);
   add_array(writefile, SubhaloVmaxInfall, "SubhaloVmaxInfall", H5::PredType::NATIVE_FLOAT);
+
   add_array(writefile, SnapNumLastIdentified, "SnapNumLastIdentified", H5::PredType::NATIVE_INT16);
   add_array(writefile, SubfindIDLastIdentified, "SubfindIDLastIdentified", H5::PredType::NATIVE_INT32);
   add_array(writefile, SubhaloMassLastIdentified, "SubhaloMassLastIdentified", H5::PredType::NATIVE_FLOAT);
   add_array_2d(writefile, SubhaloMassTypeLastIdentified, "SubhaloMassTypeLastIdentified", H5::PredType::NATIVE_FLOAT);
   add_array(writefile, SubhaloVmaxLastIdentified, "SubhaloVmaxLastIdentified", H5::PredType::NATIVE_FLOAT);
+
+  add_array(writefile, SnapNumLastCrossing, "SnapNumLastCrossing", H5::PredType::NATIVE_INT16);
+  add_array(writefile, SubfindIDLastCrossing, "SubfindIDLastCrossing", H5::PredType::NATIVE_INT32);
+  add_array(writefile, SubhaloMassLastCrossing, "SubhaloMassLastCrossing", H5::PredType::NATIVE_FLOAT);
+  add_array_2d(writefile, SubhaloMassTypeLastCrossing, "SubhaloMassTypeLastCrossing", H5::PredType::NATIVE_FLOAT);
+  add_array(writefile, SubhaloVmaxLastCrossing, "SubhaloVmaxLastCrossing", H5::PredType::NATIVE_FLOAT);
+
+  add_array(writefile, SnapNumFirstCrossing, "SnapNumFirstCrossing", H5::PredType::NATIVE_INT16);
+  add_array(writefile, SubfindIDFirstCrossing, "SubfindIDFirstCrossing", H5::PredType::NATIVE_INT32);
+  add_array(writefile, SubhaloMassFirstCrossing, "SubhaloMassFirstCrossing", H5::PredType::NATIVE_FLOAT);
+  add_array_2d(writefile, SubhaloMassTypeFirstCrossing, "SubhaloMassTypeFirstCrossing", H5::PredType::NATIVE_FLOAT);
+  add_array(writefile, SubhaloVmaxFirstCrossing, "SubhaloVmaxFirstCrossing", H5::PredType::NATIVE_FLOAT);
+
   writefile.close();
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
