@@ -86,8 +86,11 @@ public:
     FloatArray<8> SubhaloStellarPhotometrics;
 #endif
 #ifdef INFALL_CATALOG
+    FloatArray<3> GroupPos;
+    real_type Group_R_Crit200;
     real_type SubhaloMass;
     FloatArray<6> SubhaloMassType;
+    FloatArray<3> SubhaloPos;
     real_type SubhaloVmax;
 #endif
 
@@ -117,8 +120,11 @@ public:
 #endif
 #ifdef INFALL_CATALOG
                ,
+               FloatArray<3> GroupPos_,
+               real_type Group_R_Crit200_,
                real_type SubhaloMass_,
                FloatArray<6>& SubhaloMassType_,
+               FloatArray<3>& SubhaloPos_,
                real_type SubhaloVmax_
 #endif
                )
@@ -147,8 +153,11 @@ public:
 #endif
 #ifdef INFALL_CATALOG
           ,
+          GroupPos(GroupPos_),
+          Group_R_Crit200(Group_R_Crit200_),
           SubhaloMass(SubhaloMass_),
           SubhaloMassType(SubhaloMassType_),
+          SubhaloPos(SubhaloPos_),
           SubhaloVmax(SubhaloVmax_)
 #endif
           {
@@ -202,14 +211,16 @@ public:
       subhalos_[sub->data_.SnapNum][sub->data_.SubfindID] = sub;
 
       // Establish links between subhalos
+#ifdef EXTRA_POINTERS
+      establish_link(all_subs, sub->last_progenitor_, sub->data_.LastProgenitorID);
+      establish_link(all_subs, sub->main_leaf_progenitor_, sub->data_.MainLeafProgenitorID);
+      establish_link(all_subs, sub->root_descendant_, sub->data_.RootDescendantID);
+#endif
       establish_link(all_subs, sub->first_progenitor_, sub->data_.FirstProgenitorID);
       establish_link(all_subs, sub->next_progenitor_, sub->data_.NextProgenitorID);
       establish_link(all_subs, sub->descendant_, sub->data_.DescendantID);
       establish_link(all_subs, sub->first_subhalo_in_fof_group_, sub->data_.FirstSubhaloInFOFGroupID);
       establish_link(all_subs, sub->next_subhalo_in_fof_group_, sub->data_.NextSubhaloInFOFGroupID);
-      establish_link(all_subs, sub->last_progenitor_, sub->data_.LastProgenitorID);
-      establish_link(all_subs, sub->main_leaf_progenitor_, sub->data_.MainLeafProgenitorID);
-      establish_link(all_subs, sub->root_descendant_, sub->data_.RootDescendantID);
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
   }
@@ -352,6 +363,17 @@ public:
     }
 
     // The member functions below return "linked" Subhalo objects.
+#ifdef EXTRA_POINTERS
+    Subhalo last_progenitor() const {
+      return ptr_to_sub(fetch()->last_progenitor_);
+    }
+    Subhalo main_leaf_progenitor() const {
+      return ptr_to_sub(fetch()->main_leaf_progenitor_);
+    }
+    Subhalo root_descendant() const {
+      return ptr_to_sub(fetch()->root_descendant_);
+    }
+#endif
     Subhalo first_progenitor() const {
       return ptr_to_sub(fetch()->first_progenitor_);
     }
@@ -366,28 +388,6 @@ public:
     }
     Subhalo next_subhalo_in_fof_group() const {
       return ptr_to_sub(fetch()->next_subhalo_in_fof_group_);
-    }
-    Subhalo last_progenitor() const {
-      return ptr_to_sub(fetch()->last_progenitor_);
-    }
-    Subhalo main_leaf_progenitor() const {
-      return ptr_to_sub(fetch()->main_leaf_progenitor_);
-    }
-    Subhalo root_descendant() const {
-      return ptr_to_sub(fetch()->root_descendant_);
-    }
-
-    /** Return a BranchIterator pointing to the current Subhalo. */
-    BranchIterator branch_begin() const {
-      auto p = fetch();
-      return BranchIterator(t_, p, p->main_leaf_progenitor_);
-    }
-    /** Return a BranchIterator pointing to "one past" the main leaf
-     * progenitor of this Subhalo.
-     */
-    BranchIterator branch_end() const {
-      auto p = fetch();
-      return BranchIterator(t_, nullptr, p->main_leaf_progenitor_);
     }
 
     /** Helper function to determine whether this Subhalo is valid. */
@@ -522,76 +522,6 @@ public:
     }
   };
 
-  /** @class Tree::BranchIterator
-   * @brief Iterator for Subhalos along the main branch of a given Subhalo.
-   *
-   * RI(*this): cur_sub_->main_leaf_progenitor_ == main_leaf_
-   *
-   * Implementation note: the main_leaf_ variable is redundant,
-   * but is included for consistency checks.
-   */
-  class BranchIterator : private totally_ordered<BranchIterator> {
-   public:
-    // These type definitions help us use STL's iterator_traits.
-    /** Element type. */
-    typedef Subhalo value_type;
-    /** Type of pointers to elements. */
-    typedef Subhalo* pointer;
-    /** Type of references to elements. */
-    typedef Subhalo& reference;
-    /** Iterator category. */
-    typedef std::input_iterator_tag iterator_category;
-    /** Difference between iterators */
-    typedef std::ptrdiff_t difference_type;
-
-    /** Construct an invalid BranchIterator. */
-    BranchIterator() : t_(nullptr), cur_sub_(nullptr), main_leaf_(nullptr) {
-    }
-
-    /** Method to dereference a BranchIterator.
-     * @pre Iterator must be valid.
-     */
-    Subhalo operator*() const {
-      assert(is_valid());
-      return Subhalo(t_, cur_sub_->data_.SnapNum, cur_sub_->data_.SubfindID);
-    }
-    /** Method to increment a BranchIterator.
-     * @pre Iterator must be valid.
-     */
-    BranchIterator& operator++() {
-      assert(is_valid());
-      cur_sub_ = cur_sub_->first_progenitor_;  // can be nullptr
-      return *this;
-    }
-    /** Method to compare two BranchIterators.
-     * @note Invalid BranchIterators are always equal to each other.
-     */
-    bool operator==(const BranchIterator& x) const {
-      return (t_ == x.t_) && (main_leaf_ == x.main_leaf_) &&
-          (cur_sub_ == x.cur_sub_);
-    }
-
-   private:
-    friend class Tree;
-    // Pointer back to the Tree container.
-    Tree* t_;
-    // Pointer to the current subhalo.
-    internal_subhalo* cur_sub_;
-    // Pointer to the main leaf progenitor (only used for consistency checks).
-    internal_subhalo* main_leaf_;
-    /** Private constructor. */
-    BranchIterator(const tree_type* t, internal_subhalo* cur_sub,
-        internal_subhalo* main_leaf)
-        : t_(const_cast<tree_type*>(t)), cur_sub_(cur_sub),
-          main_leaf_(main_leaf) {
-    }
-    /** Helper function to determine whether this iterator is valid. */
-    bool is_valid() const {
-      return (t_ != nullptr) && (main_leaf_ != nullptr) && (cur_sub_ != nullptr) &&
-          (cur_sub_->main_leaf_progenitor_ == main_leaf_);
-    }
-  };
-
 private:
   ///////////////////
   // PRIVATE TYPES //
@@ -602,25 +532,29 @@ private:
     // Fields from "minimal" data format.
     DataFormat data_;
     // Links to other subhalos.
+#ifdef EXTRA_POINTERS
+    internal_subhalo* last_progenitor_ = nullptr;
+    internal_subhalo* main_leaf_progenitor_ = nullptr;
+    internal_subhalo* root_descendant_ = nullptr;
+#endif
     internal_subhalo* first_progenitor_ = nullptr;
     internal_subhalo* next_progenitor_ = nullptr;
     internal_subhalo* descendant_ = nullptr;
     internal_subhalo* first_subhalo_in_fof_group_ = nullptr;
     internal_subhalo* next_subhalo_in_fof_group_ = nullptr;
-    internal_subhalo* last_progenitor_ = nullptr;
-    internal_subhalo* main_leaf_progenitor_ = nullptr;
-    internal_subhalo* root_descendant_ = nullptr;
     /** Constructor. */
     internal_subhalo(const DataFormat data)
         : data_(data),
+#ifdef EXTRA_POINTERS
+          last_progenitor_(nullptr),
+          main_leaf_progenitor_(nullptr),
+          root_descendant_(nullptr),
+#endif
           first_progenitor_(nullptr),
           next_progenitor_(nullptr),
           descendant_(nullptr),
           first_subhalo_in_fof_group_(nullptr),
-          next_subhalo_in_fof_group_(nullptr),
-          last_progenitor_(nullptr),
-          main_leaf_progenitor_(nullptr),
-          root_descendant_(nullptr) {
+          next_subhalo_in_fof_group_(nullptr) {
     }
     /** Default destructor. */
     ~internal_subhalo() = default;
@@ -677,8 +611,11 @@ private:
     auto SubhaloStellarPhotometrics = read_dataset<FloatArray<8>>(treefilename, "SubhaloStellarPhotometrics");
 #endif
 #ifdef INFALL_CATALOG
+    auto GroupPos = read_dataset<FloatArray<3>>(treefilename, "GroupPos");
+    auto Group_R_Crit200 = read_dataset<real_type>(treefilename, "Group_R_Crit200");
     auto SubhaloMass = read_dataset<real_type>(treefilename, "SubhaloMass");
     auto SubhaloMassType = read_dataset<FloatArray<6>>(treefilename, "SubhaloMassType");
+    auto SubhaloPos = read_dataset<FloatArray<3>>(treefilename, "SubhaloPos");
     auto SubhaloVmax = read_dataset<real_type>(treefilename, "SubhaloVmax");
 #endif
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
@@ -716,8 +653,11 @@ private:
 #endif
 #ifdef INFALL_CATALOG
               ,
+              GroupPos[rownum],
+              Group_R_Crit200[rownum],
               SubhaloMass[rownum],
               SubhaloMassType[rownum],
+              SubhaloPos[rownum],
               SubhaloVmax[rownum]
 #endif
               )));
