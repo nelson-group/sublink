@@ -20,9 +20,6 @@
  */
 namespace subfind {
 
-// Number of particle types in the simulation
-static constexpr int num_parttypes = 6;
-
 /** @brief Function to read a scalar attribute from a Subfind output file.
  *
  * @tparam T Type of the attribute.
@@ -66,19 +63,16 @@ T get_scalar_attribute(const std::string& basedir, const snapnum_type snapnum,
   return retval;
 }
 
-/** @brief Function to read a one-dimensional dataset (a.k.a. block)
+/** @brief Function to read a dataset (a.k.a. block)
  *         or a dataset "column" from a single file.
  *
  * @tparam T Type of the elements in the dataset.
  * @param[in] file_name Path to the input file.
  * @param[in] group_name The HDF5 group name, i.e., @a Group or @a Subhalo.
  * @param[in] block_name Name of the dataset.
- * @param[in] parttype The particle type; -1 for one-dimensional datasets.
+ * @param[in] parttype The 0-indexed column number, if any (-1 otherwise).
  *
  * @pre Dataset is one- or two-dimensional.
- * @pre If the dataset is two-dimensional, the number of columns
- *      corresponds to the number of particle types.
- *
  * @return A vector with the dataset values.
  */
 template <class T>
@@ -97,23 +91,28 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   hsize_t dims_out[rank];
   file_space.getSimpleExtentDims(dims_out, NULL);
 
-  // Check that dataspace makes sense.
-  if (parttype == -1)
-    assert(rank == 1);
-  else {
-    assert((rank == 2) && (dims_out[1] == num_parttypes) && (parttype >= 0));
+  // When parttype == -1 (default), dataspace in memory is the same
+  // as in the HDF5 file.
+  hsize_t dimsm[rank];
+  for (hsize_t k = 0; k < rank; ++k) dimsm[k] = dims_out[k];
+  H5::DataSpace mem_space(rank, dimsm);
+
+  // Output vector is 1D.
+  std::vector<T> retval(dimsm[0]);
+
+  // If parttype != -1, we are only interested in a single column.
+  if (parttype != -1) {
+    assert((rank == 2) && (parttype >= 0));
     // Define hyperslab (offset and size) for column of interest.
     hsize_t offset[2] = {0, static_cast<hsize_t>(parttype)};
     hsize_t count[2]  = {dims_out[0], 1};
     file_space.selectHyperslab(H5S_SELECT_SET, count, offset);
+    // The dataspace becomes 1D
+    hsize_t dimsm_1d[1] = {dims_out[0]};
+    mem_space.setExtentSimple(1, dimsm_1d);
   }
 
-  // Create output dataspace (in memory)
-  hsize_t dimsm[1] = {dims_out[0]};
-  H5::DataSpace mem_space(1, dimsm);
-
-  // Read data to vector.
-  std::vector<T> retval(dimsm[0]);
+  // Read data
   dataset->read(retval.data(), dataset->getDataType(), mem_space, file_space);
 
   // Close file and release resources
@@ -125,7 +124,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   return retval;
 }
 
-/** @brief Function to read a one-dimensional dataset (a.k.a. block)
+/** @brief Function to read a dataset (a.k.a. block)
  *         or a dataset "column."
  *
  * @tparam T Type of the elements in the dataset.
@@ -133,7 +132,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
  * @param[in] snapnum Snapshot number.
  * @param[in] group_name The HDF5 group name, i.e., @a Group or @a Subhalo.
  * @param[in] block_name Name of the dataset.
- * @param[in] parttype The particle type; -1 for one-dimensional datasets.
+ * @param[in] parttype The 0-indexed column number, if any (-1 otherwise).
  *
  * @pre (group_name == "Group") || (group_name == "Subhalo")
  *
