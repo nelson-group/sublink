@@ -37,7 +37,9 @@ CXXFLAGS += -lhdf5_cpp -lhdf5
 # Parallel sort
 CXXFLAGS += -fopenmp -DUSE_OPENMP
 
-## Profiling
+## Profiling.
+## Must wait for process to exit cleanly (otherwise gmon.out is not created)
+## To read output: gprof program_name gmon.out > program_name.txt
 #CXXFLAGS += -g -pg
 
 # Define any directories containing libraries

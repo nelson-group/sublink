@@ -40,5 +40,26 @@ struct FloatArray {
   static constexpr int size() {
     return N;
   }
+};
 
+/** @brief Type for representing arrays of doubles (e.g., positions). */
+template <int N = 1>
+struct DoubleArray {
+  double elem[N];
+
+  // Typedefs
+  typedef double          value_type;
+  typedef double&         reference;
+  typedef const double&   const_reference;
+  typedef double*         iterator;
+  typedef const double*   const_iterator;
+
+  // Accesors
+  reference       operator[](std::size_t i)       { return elem[i]; }
+  const_reference operator[](std::size_t i) const { return elem[i]; }
+
+  /** Return the number of elements in this DoubleArray. */
+  static constexpr int size() {
+    return N;
+  }
 };

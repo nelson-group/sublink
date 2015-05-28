@@ -37,20 +37,41 @@ struct MergerData {
   // Major mergers
   std::vector<snapnum_type> SnapNumLastMajorMerger;
   std::vector<count_type> NumMajorMergersLastGyr;
-  std::vector<count_type> NumMajorMergersTotal;
   std::vector<count_type> NumMajorMergersSinceRedshiftOne;
   std::vector<count_type> NumMajorMergersSinceRedshiftTwo;
   std::vector<count_type> NumMajorMergersSinceRedshiftThree;
-  std::vector<real_type> StellarMassFromMajorMergers;
+  std::vector<count_type> NumMajorMergersTotal;
+  std::vector<real_type> StellarMassFromMajorMergersLastGyr;
+  std::vector<real_type> StellarMassFromMajorMergersSinceRedshiftOne;
+  std::vector<real_type> StellarMassFromMajorMergersSinceRedshiftTwo;
+  std::vector<real_type> StellarMassFromMajorMergersSinceRedshiftThree;
+  std::vector<real_type> StellarMassFromMajorMergersTotal;
 
   // Minor mergers
   std::vector<snapnum_type> SnapNumLastMinorMerger;
   std::vector<count_type> NumMinorMergersLastGyr;
-  std::vector<count_type> NumMinorMergersTotal;
   std::vector<count_type> NumMinorMergersSinceRedshiftOne;
   std::vector<count_type> NumMinorMergersSinceRedshiftTwo;
   std::vector<count_type> NumMinorMergersSinceRedshiftThree;
-  std::vector<real_type> StellarMassFromMinorMergers;
+  std::vector<count_type> NumMinorMergersTotal;
+  std::vector<real_type> StellarMassFromMinorMergersLastGyr;
+  std::vector<real_type> StellarMassFromMinorMergersSinceRedshiftOne;
+  std::vector<real_type> StellarMassFromMinorMergersSinceRedshiftTwo;
+  std::vector<real_type> StellarMassFromMinorMergersSinceRedshiftThree;
+  std::vector<real_type> StellarMassFromMinorMergersTotal;
+
+  // All mergers
+  std::vector<snapnum_type> SnapNumLastMerger;
+  std::vector<count_type> NumMergersLastGyr;
+  std::vector<count_type> NumMergersSinceRedshiftOne;
+  std::vector<count_type> NumMergersSinceRedshiftTwo;
+  std::vector<count_type> NumMergersSinceRedshiftThree;
+  std::vector<count_type> NumMergersTotal;
+  std::vector<real_type> StellarMassFromMergersLastGyr;
+  std::vector<real_type> StellarMassFromMergersSinceRedshiftOne;
+  std::vector<real_type> StellarMassFromMergersSinceRedshiftTwo;
+  std::vector<real_type> StellarMassFromMergersSinceRedshiftThree;
+  std::vector<real_type> StellarMassFromMergersTotal;
 
   ///////////////////
   // BARYONIC MASS //
@@ -59,20 +80,41 @@ struct MergerData {
   // Major mergers
   std::vector<snapnum_type> SnapNumLastMajorMergerBaryonic;
   std::vector<count_type> NumMajorMergersLastGyrBaryonic;
-  std::vector<count_type> NumMajorMergersTotalBaryonic;
   std::vector<count_type> NumMajorMergersSinceRedshiftOneBaryonic;
   std::vector<count_type> NumMajorMergersSinceRedshiftTwoBaryonic;
   std::vector<count_type> NumMajorMergersSinceRedshiftThreeBaryonic;
-  std::vector<real_type> BaryonicMassFromMajorMergers;
+  std::vector<count_type> NumMajorMergersTotalBaryonic;
+  std::vector<real_type> BaryonicMassFromMajorMergersLastGyr;
+  std::vector<real_type> BaryonicMassFromMajorMergersSinceRedshiftOne;
+  std::vector<real_type> BaryonicMassFromMajorMergersSinceRedshiftTwo;
+  std::vector<real_type> BaryonicMassFromMajorMergersSinceRedshiftThree;
+  std::vector<real_type> BaryonicMassFromMajorMergersTotal;
 
   // Minor mergers
   std::vector<snapnum_type> SnapNumLastMinorMergerBaryonic;
   std::vector<count_type> NumMinorMergersLastGyrBaryonic;
-  std::vector<count_type> NumMinorMergersTotalBaryonic;
   std::vector<count_type> NumMinorMergersSinceRedshiftOneBaryonic;
   std::vector<count_type> NumMinorMergersSinceRedshiftTwoBaryonic;
   std::vector<count_type> NumMinorMergersSinceRedshiftThreeBaryonic;
-  std::vector<real_type> BaryonicMassFromMinorMergers;
+  std::vector<count_type> NumMinorMergersTotalBaryonic;
+  std::vector<real_type> BaryonicMassFromMinorMergersLastGyr;
+  std::vector<real_type> BaryonicMassFromMinorMergersSinceRedshiftOne;
+  std::vector<real_type> BaryonicMassFromMinorMergersSinceRedshiftTwo;
+  std::vector<real_type> BaryonicMassFromMinorMergersSinceRedshiftThree;
+  std::vector<real_type> BaryonicMassFromMinorMergersTotal;
+
+  // All mergers
+  std::vector<snapnum_type> SnapNumLastMergerBaryonic;
+  std::vector<count_type> NumMergersLastGyrBaryonic;
+  std::vector<count_type> NumMergersSinceRedshiftOneBaryonic;
+  std::vector<count_type> NumMergersSinceRedshiftTwoBaryonic;
+  std::vector<count_type> NumMergersSinceRedshiftThreeBaryonic;
+  std::vector<count_type> NumMergersTotalBaryonic;
+  std::vector<real_type> BaryonicMassFromMergersLastGyr;
+  std::vector<real_type> BaryonicMassFromMergersSinceRedshiftOne;
+  std::vector<real_type> BaryonicMassFromMergersSinceRedshiftTwo;
+  std::vector<real_type> BaryonicMassFromMergersSinceRedshiftThree;
+  std::vector<real_type> BaryonicMassFromMergersTotal;
 
   /** Constructor.
    * @param[in] nsubs The number of subhalos in this snapshot.
@@ -80,35 +122,75 @@ struct MergerData {
   MergerData(const uint32_t nsubs)
       : SnapNumLastMajorMerger(std::vector<snapnum_type>(nsubs, -1)),
         NumMajorMergersLastGyr(std::vector<count_type>(nsubs, 0)),
-        NumMajorMergersTotal(std::vector<count_type>(nsubs, 0)),
         NumMajorMergersSinceRedshiftOne(std::vector<count_type>(nsubs, 0)),
         NumMajorMergersSinceRedshiftTwo(std::vector<count_type>(nsubs, 0)),
         NumMajorMergersSinceRedshiftThree(std::vector<count_type>(nsubs, 0)),
-        StellarMassFromMajorMergers(std::vector<real_type>(nsubs, 0)),
+        NumMajorMergersTotal(std::vector<count_type>(nsubs, 0)),
+        StellarMassFromMajorMergersLastGyr(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMajorMergersSinceRedshiftOne(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMajorMergersSinceRedshiftTwo(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMajorMergersSinceRedshiftThree(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMajorMergersTotal(std::vector<real_type>(nsubs, 0)),
 
         SnapNumLastMinorMerger(std::vector<snapnum_type>(nsubs, -1)),
         NumMinorMergersLastGyr(std::vector<count_type>(nsubs, 0)),
-        NumMinorMergersTotal(std::vector<count_type>(nsubs, 0)),
         NumMinorMergersSinceRedshiftOne(std::vector<count_type>(nsubs, 0)),
         NumMinorMergersSinceRedshiftTwo(std::vector<count_type>(nsubs, 0)),
         NumMinorMergersSinceRedshiftThree(std::vector<count_type>(nsubs, 0)),
-        StellarMassFromMinorMergers(std::vector<real_type>(nsubs, 0)),
+        NumMinorMergersTotal(std::vector<count_type>(nsubs, 0)),
+        StellarMassFromMinorMergersLastGyr(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMinorMergersSinceRedshiftOne(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMinorMergersSinceRedshiftTwo(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMinorMergersSinceRedshiftThree(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMinorMergersTotal(std::vector<real_type>(nsubs, 0)),
+
+        SnapNumLastMerger(std::vector<snapnum_type>(nsubs, -1)),
+        NumMergersLastGyr(std::vector<count_type>(nsubs, 0)),
+        NumMergersSinceRedshiftOne(std::vector<count_type>(nsubs, 0)),
+        NumMergersSinceRedshiftTwo(std::vector<count_type>(nsubs, 0)),
+        NumMergersSinceRedshiftThree(std::vector<count_type>(nsubs, 0)),
+        NumMergersTotal(std::vector<count_type>(nsubs, 0)),
+        StellarMassFromMergersLastGyr(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMergersSinceRedshiftOne(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMergersSinceRedshiftTwo(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMergersSinceRedshiftThree(std::vector<real_type>(nsubs, 0)),
+        StellarMassFromMergersTotal(std::vector<real_type>(nsubs, 0)),
 
         SnapNumLastMajorMergerBaryonic(std::vector<snapnum_type>(nsubs, -1)),
         NumMajorMergersLastGyrBaryonic(std::vector<count_type>(nsubs, 0)),
-        NumMajorMergersTotalBaryonic(std::vector<count_type>(nsubs, 0)),
         NumMajorMergersSinceRedshiftOneBaryonic(std::vector<count_type>(nsubs, 0)),
         NumMajorMergersSinceRedshiftTwoBaryonic(std::vector<count_type>(nsubs, 0)),
         NumMajorMergersSinceRedshiftThreeBaryonic(std::vector<count_type>(nsubs, 0)),
-        BaryonicMassFromMajorMergers(std::vector<real_type>(nsubs, 0)),
+        NumMajorMergersTotalBaryonic(std::vector<count_type>(nsubs, 0)),
+        BaryonicMassFromMajorMergersLastGyr(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMajorMergersSinceRedshiftOne(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMajorMergersSinceRedshiftTwo(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMajorMergersSinceRedshiftThree(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMajorMergersTotal(std::vector<real_type>(nsubs, 0)),
 
         SnapNumLastMinorMergerBaryonic(std::vector<snapnum_type>(nsubs, -1)),
         NumMinorMergersLastGyrBaryonic(std::vector<count_type>(nsubs, 0)),
-        NumMinorMergersTotalBaryonic(std::vector<count_type>(nsubs, 0)),
         NumMinorMergersSinceRedshiftOneBaryonic(std::vector<count_type>(nsubs, 0)),
         NumMinorMergersSinceRedshiftTwoBaryonic(std::vector<count_type>(nsubs, 0)),
         NumMinorMergersSinceRedshiftThreeBaryonic(std::vector<count_type>(nsubs, 0)),
-        BaryonicMassFromMinorMergers(std::vector<real_type>(nsubs, 0)) {
+        NumMinorMergersTotalBaryonic(std::vector<count_type>(nsubs, 0)),
+        BaryonicMassFromMinorMergersLastGyr(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMinorMergersSinceRedshiftOne(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMinorMergersSinceRedshiftTwo(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMinorMergersSinceRedshiftThree(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMinorMergersTotal(std::vector<real_type>(nsubs, 0)),
+
+        SnapNumLastMergerBaryonic(std::vector<snapnum_type>(nsubs, -1)),
+        NumMergersLastGyrBaryonic(std::vector<count_type>(nsubs, 0)),
+        NumMergersSinceRedshiftOneBaryonic(std::vector<count_type>(nsubs, 0)),
+        NumMergersSinceRedshiftTwoBaryonic(std::vector<count_type>(nsubs, 0)),
+        NumMergersSinceRedshiftThreeBaryonic(std::vector<count_type>(nsubs, 0)),
+        NumMergersTotalBaryonic(std::vector<count_type>(nsubs, 0)),
+        BaryonicMassFromMergersLastGyr(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMergersSinceRedshiftOne(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMergersSinceRedshiftTwo(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMergersSinceRedshiftThree(std::vector<real_type>(nsubs, 0)),
+        BaryonicMassFromMergersTotal(std::vector<real_type>(nsubs, 0)) {
   }
 };
 
@@ -125,6 +207,8 @@ void merger_history_sub(Subhalo sub,
   bool no_major_merger_yet_baryonic = true;
   bool no_minor_merger_yet = true;
   bool no_minor_merger_yet_baryonic = true;
+  bool no_merger_yet = true;
+  bool no_merger_yet_baryonic = true;
 
   // Iterate over first progenitor
   auto first_prog = sub.first_progenitor();
@@ -170,17 +254,26 @@ void merger_history_sub(Subhalo sub,
           no_major_merger_yet_baryonic = false;
         }
         // Add to merger counters
+        real_type mass_secondary = std::min(
+            stmax_pair.first.data().Mass, stmax_pair.second.data().Mass);
         md.NumMajorMergersTotalBaryonic[index_orig] += 1;
-        md.BaryonicMassFromMajorMergers[index_orig] += std::min(stmax_pair.first.data().Mass,
-                                                               stmax_pair.second.data().Mass);
-        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0)
+        md.BaryonicMassFromMajorMergersTotal[index_orig] += mass_secondary;
+        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0) {
           md.NumMajorMergersLastGyrBaryonic[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 1.0)
+          md.BaryonicMassFromMajorMergersLastGyr[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 1.0) {
           md.NumMajorMergersSinceRedshiftOneBaryonic[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 2.0)
+          md.BaryonicMassFromMajorMergersSinceRedshiftOne[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 2.0) {
           md.NumMajorMergersSinceRedshiftTwoBaryonic[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 3.0)
+          md.BaryonicMassFromMajorMergersSinceRedshiftTwo[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 3.0) {
           md.NumMajorMergersSinceRedshiftThreeBaryonic[index_orig] += 1;
+          md.BaryonicMassFromMajorMergersSinceRedshiftThree[index_orig] += mass_secondary;
+        }
       }
 
       // Check if minor merger
@@ -192,17 +285,55 @@ void merger_history_sub(Subhalo sub,
           no_minor_merger_yet_baryonic = false;
         }
         // Add to merger counters
+        real_type mass_secondary = std::min(
+            stmax_pair.first.data().Mass, stmax_pair.second.data().Mass);
         md.NumMinorMergersTotalBaryonic[index_orig] += 1;
-        md.BaryonicMassFromMinorMergers[index_orig] += std::min(stmax_pair.first.data().Mass,
-                                                               stmax_pair.second.data().Mass);
-        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0)
+        md.BaryonicMassFromMinorMergersTotal[index_orig] += mass_secondary;
+        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0) {
           md.NumMinorMergersLastGyrBaryonic[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 1.0)
+          md.BaryonicMassFromMinorMergersLastGyr[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 1.0) {
           md.NumMinorMergersSinceRedshiftOneBaryonic[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 2.0)
+          md.BaryonicMassFromMinorMergersSinceRedshiftOne[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 2.0) {
           md.NumMinorMergersSinceRedshiftTwoBaryonic[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 3.0)
+          md.BaryonicMassFromMinorMergersSinceRedshiftTwo[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 3.0) {
           md.NumMinorMergersSinceRedshiftThreeBaryonic[index_orig] += 1;
+          md.BaryonicMassFromMinorMergersSinceRedshiftThree[index_orig] += mass_secondary;
+        }
+      }
+
+      // All mergers
+      if (true) {
+        if (no_merger_yet_baryonic) {
+          md.SnapNumLastMergerBaryonic[index_orig] = sub.snapnum();
+          no_merger_yet_baryonic = false;
+        }
+        // Add to merger counters
+        real_type mass_secondary = std::min(
+            stmax_pair.first.data().Mass, stmax_pair.second.data().Mass);
+        md.NumMergersTotalBaryonic[index_orig] += 1;
+        md.BaryonicMassFromMergersTotal[index_orig] += mass_secondary;
+        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0) {
+          md.NumMergersLastGyrBaryonic[index_orig] += 1;
+          md.BaryonicMassFromMergersLastGyr[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 1.0) {
+          md.NumMergersSinceRedshiftOneBaryonic[index_orig] += 1;
+          md.BaryonicMassFromMergersSinceRedshiftOne[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 2.0) {
+          md.NumMergersSinceRedshiftTwoBaryonic[index_orig] += 1;
+          md.BaryonicMassFromMergersSinceRedshiftTwo[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 3.0) {
+          md.NumMergersSinceRedshiftThreeBaryonic[index_orig] += 1;
+          md.BaryonicMassFromMergersSinceRedshiftThree[index_orig] += mass_secondary;
+        }
       }
 
       ///////////////////
@@ -224,17 +355,26 @@ void merger_history_sub(Subhalo sub,
           no_major_merger_yet = false;
         }
         // Add to merger counters
+        real_type mass_secondary = std::min(
+            stmax_pair.first.data().SubhaloMassType[4], stmax_pair.second.data().SubhaloMassType[4]);
         md.NumMajorMergersTotal[index_orig] += 1;
-        md.StellarMassFromMajorMergers[index_orig] += std::min(stmax_pair.first.data().SubhaloMassType[4],
-                                                               stmax_pair.second.data().SubhaloMassType[4]);
-        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0)
+        md.StellarMassFromMajorMergersTotal[index_orig] += mass_secondary;
+        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0) {
           md.NumMajorMergersLastGyr[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 1.0)
+          md.StellarMassFromMajorMergersLastGyr[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 1.0) {
           md.NumMajorMergersSinceRedshiftOne[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 2.0)
+          md.StellarMassFromMajorMergersSinceRedshiftOne[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 2.0) {
           md.NumMajorMergersSinceRedshiftTwo[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 3.0)
+          md.StellarMassFromMajorMergersSinceRedshiftTwo[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 3.0) {
           md.NumMajorMergersSinceRedshiftThree[index_orig] += 1;
+          md.StellarMassFromMajorMergersSinceRedshiftThree[index_orig] += mass_secondary;
+        }
       }
 
       // Check if minor merger
@@ -246,17 +386,56 @@ void merger_history_sub(Subhalo sub,
           no_minor_merger_yet = false;
         }
         // Add to merger counters
+        real_type mass_secondary = std::min(
+            stmax_pair.first.data().SubhaloMassType[4], stmax_pair.second.data().SubhaloMassType[4]);
         md.NumMinorMergersTotal[index_orig] += 1;
-        md.StellarMassFromMinorMergers[index_orig] += std::min(stmax_pair.first.data().SubhaloMassType[4],
-                                                               stmax_pair.second.data().SubhaloMassType[4]);
-        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0)
+        md.StellarMassFromMinorMergersTotal[index_orig] += mass_secondary;
+        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0) {
           md.NumMinorMergersLastGyr[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 1.0)
+          md.StellarMassFromMinorMergersLastGyr[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 1.0) {
           md.NumMinorMergersSinceRedshiftOne[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 2.0)
+          md.StellarMassFromMinorMergersSinceRedshiftOne[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 2.0) {
           md.NumMinorMergersSinceRedshiftTwo[index_orig] += 1;
-        if (redshifts_all[sub.snapnum()] < 3.0)
+          md.StellarMassFromMinorMergersSinceRedshiftTwo[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 3.0) {
           md.NumMinorMergersSinceRedshiftThree[index_orig] += 1;
+          md.StellarMassFromMinorMergersSinceRedshiftThree[index_orig] += mass_secondary;
+        }
+      }
+
+      // All mergers
+      if (true) {
+        // Check if most recent
+        if (no_merger_yet) {
+          md.SnapNumLastMerger[index_orig] = sub.snapnum();
+          no_merger_yet = false;
+        }
+        // Add to merger counters
+        real_type mass_secondary = std::min(
+            stmax_pair.first.data().SubhaloMassType[4], stmax_pair.second.data().SubhaloMassType[4]);
+        md.NumMergersTotal[index_orig] += 1;
+        md.StellarMassFromMergersTotal[index_orig] += mass_secondary;
+        if (times_all[snapnum_orig] - times_all[sub.snapnum()] < 1.0) {
+          md.NumMergersLastGyr[index_orig] += 1;
+          md.StellarMassFromMergersLastGyr[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 1.0) {
+          md.NumMergersSinceRedshiftOne[index_orig] += 1;
+          md.StellarMassFromMergersSinceRedshiftOne[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 2.0) {
+          md.NumMergersSinceRedshiftTwo[index_orig] += 1;
+          md.StellarMassFromMergersSinceRedshiftTwo[index_orig] += mass_secondary;
+        }
+        if (redshifts_all[sub.snapnum()] < 3.0) {
+          md.NumMergersSinceRedshiftThree[index_orig] += 1;
+          md.StellarMassFromMergersSinceRedshiftThree[index_orig] += mass_secondary;
+        }
       }
     }
 
@@ -285,10 +464,10 @@ void merger_history_all(const std::string& basedir, const std::string& treedir,
       wall_clock.seconds() << " s.\n";
   std::cout << "\n";
 
-  // Iterate over snapshots
+  // Iterate over snapshots (backwards)
   wall_clock.start();
   std::cout << "Iterating over snapshots..." << std::endl;
-  for (auto snapnum = snapnum_first; snapnum <= snapnum_last; ++snapnum) {
+  for (auto snapnum = snapnum_last; snapnum >= snapnum_first; --snapnum) {
 
     // AD HOC: if L75n1820FP, skip snapshots 53 and 55.
     if (basedir == "/n/hernquistfs1/Illustris/Runs/L75n1820FP/output") {
@@ -325,21 +504,42 @@ void merger_history_all(const std::string& basedir, const std::string& treedir,
 
     // Write to file.
     wall_clock.start();
+
     add_array(writefile, md.SnapNumLastMajorMerger, "SnapNumLastMajorMerger", H5::PredType::NATIVE_INT16);
     add_array(writefile, md.NumMajorMergersLastGyr, "NumMajorMergersLastGyr", H5::PredType::NATIVE_UINT32);
-    add_array(writefile, md.NumMajorMergersTotal, "NumMajorMergersTotal", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMajorMergersSinceRedshiftOne, "NumMajorMergersSinceRedshiftOne", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMajorMergersSinceRedshiftTwo, "NumMajorMergersSinceRedshiftTwo", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMajorMergersSinceRedshiftThree, "NumMajorMergersSinceRedshiftThree", H5::PredType::NATIVE_UINT32);
-    add_array(writefile, md.StellarMassFromMajorMergers, "StellarMassFromMajorMergers", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.NumMajorMergersTotal, "NumMajorMergersTotal", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.StellarMassFromMajorMergersLastGyr, "StellarMassFromMajorMergersLastGyr", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMajorMergersSinceRedshiftOne, "StellarMassFromMajorMergersSinceRedshiftOne", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMajorMergersSinceRedshiftTwo, "StellarMassFromMajorMergersSinceRedshiftTwo", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMajorMergersSinceRedshiftThree, "StellarMassFromMajorMergersSinceRedshiftThree", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMajorMergersTotal, "StellarMassFromMajorMergersTotal", H5::PredType::NATIVE_FLOAT);
 
     add_array(writefile, md.SnapNumLastMinorMerger, "SnapNumLastMinorMerger", H5::PredType::NATIVE_INT16);
     add_array(writefile, md.NumMinorMergersLastGyr, "NumMinorMergersLastGyr", H5::PredType::NATIVE_UINT32);
-    add_array(writefile, md.NumMinorMergersTotal, "NumMinorMergersTotal", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMinorMergersSinceRedshiftOne, "NumMinorMergersSinceRedshiftOne", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMinorMergersSinceRedshiftTwo, "NumMinorMergersSinceRedshiftTwo", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMinorMergersSinceRedshiftThree, "NumMinorMergersSinceRedshiftThree", H5::PredType::NATIVE_UINT32);
-    add_array(writefile, md.StellarMassFromMinorMergers, "StellarMassFromMinorMergers", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.NumMinorMergersTotal, "NumMinorMergersTotal", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.StellarMassFromMinorMergersLastGyr, "StellarMassFromMinorMergersLastGyr", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMinorMergersSinceRedshiftOne, "StellarMassFromMinorMergersSinceRedshiftOne", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMinorMergersSinceRedshiftTwo, "StellarMassFromMinorMergersSinceRedshiftTwo", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMinorMergersSinceRedshiftThree, "StellarMassFromMinorMergersSinceRedshiftThree", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMinorMergersTotal, "StellarMassFromMinorMergersTotal", H5::PredType::NATIVE_FLOAT);
+
+    add_array(writefile, md.SnapNumLastMerger, "SnapNumLastMerger", H5::PredType::NATIVE_INT16);
+    add_array(writefile, md.NumMergersLastGyr, "NumMergersLastGyr", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.NumMergersSinceRedshiftOne, "NumMergersSinceRedshiftOne", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.NumMergersSinceRedshiftTwo, "NumMergersSinceRedshiftTwo", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.NumMergersSinceRedshiftThree, "NumMergersSinceRedshiftThree", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.NumMergersTotal, "NumMergersTotal", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.StellarMassFromMergersLastGyr, "StellarMassFromMergersLastGyr", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMergersSinceRedshiftOne, "StellarMassFromMergersSinceRedshiftOne", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMergersSinceRedshiftTwo, "StellarMassFromMergersSinceRedshiftTwo", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMergersSinceRedshiftThree, "StellarMassFromMergersSinceRedshiftThree", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.StellarMassFromMergersTotal, "StellarMassFromMergersTotal", H5::PredType::NATIVE_FLOAT);
 
     add_array(writefile, md.SnapNumLastMajorMergerBaryonic, "SnapNumLastMajorMergerBaryonic", H5::PredType::NATIVE_INT16);
     add_array(writefile, md.NumMajorMergersLastGyrBaryonic, "NumMajorMergersLastGyrBaryonic", H5::PredType::NATIVE_UINT32);
@@ -347,7 +547,11 @@ void merger_history_all(const std::string& basedir, const std::string& treedir,
     add_array(writefile, md.NumMajorMergersSinceRedshiftOneBaryonic, "NumMajorMergersSinceRedshiftOneBaryonic", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMajorMergersSinceRedshiftTwoBaryonic, "NumMajorMergersSinceRedshiftTwoBaryonic", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMajorMergersSinceRedshiftThreeBaryonic, "NumMajorMergersSinceRedshiftThreeBaryonic", H5::PredType::NATIVE_UINT32);
-    add_array(writefile, md.BaryonicMassFromMajorMergers, "BaryonicMassFromMajorMergers", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMajorMergersLastGyr, "BaryonicMassFromMajorMergersLastGyr", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMajorMergersSinceRedshiftOne, "BaryonicMassFromMajorMergersSinceRedshiftOne", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMajorMergersSinceRedshiftTwo, "BaryonicMassFromMajorMergersSinceRedshiftTwo", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMajorMergersSinceRedshiftThree, "BaryonicMassFromMajorMergersSinceRedshiftThree", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMajorMergersTotal, "BaryonicMassFromMajorMergersTotal", H5::PredType::NATIVE_FLOAT);
 
     add_array(writefile, md.SnapNumLastMinorMergerBaryonic, "SnapNumLastMinorMergerBaryonic", H5::PredType::NATIVE_INT16);
     add_array(writefile, md.NumMinorMergersLastGyrBaryonic, "NumMinorMergersLastGyrBaryonic", H5::PredType::NATIVE_UINT32);
@@ -355,7 +559,23 @@ void merger_history_all(const std::string& basedir, const std::string& treedir,
     add_array(writefile, md.NumMinorMergersSinceRedshiftOneBaryonic, "NumMinorMergersSinceRedshiftOneBaryonic", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMinorMergersSinceRedshiftTwoBaryonic, "NumMinorMergersSinceRedshiftTwoBaryonic", H5::PredType::NATIVE_UINT32);
     add_array(writefile, md.NumMinorMergersSinceRedshiftThreeBaryonic, "NumMinorMergersSinceRedshiftThreeBaryonic", H5::PredType::NATIVE_UINT32);
-    add_array(writefile, md.BaryonicMassFromMinorMergers, "BaryonicMassFromMinorMergers", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMinorMergersLastGyr, "BaryonicMassFromMinorMergersLastGyr", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMinorMergersSinceRedshiftOne, "BaryonicMassFromMinorMergersSinceRedshiftOne", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMinorMergersSinceRedshiftTwo, "BaryonicMassFromMinorMergersSinceRedshiftTwo", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMinorMergersSinceRedshiftThree, "BaryonicMassFromMinorMergersSinceRedshiftThree", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMinorMergersTotal, "BaryonicMassFromMinorMergersTotal", H5::PredType::NATIVE_FLOAT);
+
+    add_array(writefile, md.SnapNumLastMergerBaryonic, "SnapNumLastMergerBaryonic", H5::PredType::NATIVE_INT16);
+    add_array(writefile, md.NumMergersLastGyrBaryonic, "NumMergersLastGyrBaryonic", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.NumMergersTotalBaryonic, "NumMergersTotalBaryonic", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.NumMergersSinceRedshiftOneBaryonic, "NumMergersSinceRedshiftOneBaryonic", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.NumMergersSinceRedshiftTwoBaryonic, "NumMergersSinceRedshiftTwoBaryonic", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.NumMergersSinceRedshiftThreeBaryonic, "NumMergersSinceRedshiftThreeBaryonic", H5::PredType::NATIVE_UINT32);
+    add_array(writefile, md.BaryonicMassFromMergersLastGyr, "BaryonicMassFromMergersLastGyr", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMergersSinceRedshiftOne, "BaryonicMassFromMergersSinceRedshiftOne", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMergersSinceRedshiftTwo, "BaryonicMassFromMergersSinceRedshiftTwo", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMergersSinceRedshiftThree, "BaryonicMassFromMergersSinceRedshiftThree", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, md.BaryonicMassFromMergersTotal, "BaryonicMassFromMergersTotal", H5::PredType::NATIVE_FLOAT);
 
     // Close (and flush) file
     writefile.close();

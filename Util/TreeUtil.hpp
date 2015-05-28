@@ -90,6 +90,7 @@ std::pair<Subhalo, Subhalo> get_infall_pair(Subhalo primary,
   assert(false);
 }
 
+#ifdef INFALL_CATALOG
 /** @brief Get the progenitors of @a primary and @a secondary at
  *         the moment of virial crossing.
  * @param[in] primary The primary subhalo.
@@ -163,6 +164,7 @@ std::pair<Subhalo, Subhalo> get_pair_virial_crossing(Subhalo primary,
   }
   return sub_pair;
 }
+#endif
 
 /** @brief Get the progenitors of @a primary and @a secondary at
  *         the same snapshot as @a secondary or earlier.

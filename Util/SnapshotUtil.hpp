@@ -10,6 +10,7 @@
 #include <fstream>
 #include <cassert>
 #include <cmath>
+#include <algorithm>  // std::find
 
 #include "../InputOutput/ReadSubfindHDF5.hpp"
 #include "TreeTypes.hpp"
