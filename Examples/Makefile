@@ -12,6 +12,7 @@ EXEC += infall_catalog
 EXEC += tree_test
 EXEC += custom_1
 EXEC += custom_2
+EXEC += custom_bcg
 
 # Define the C++ compiler to use
 CXX := $(shell which g++) -std=c++11

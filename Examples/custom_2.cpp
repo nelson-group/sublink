@@ -1,4 +1,4 @@
-/** @file shy_custom_1.cpp
+/** @file custom_2.cpp
  * @brief For a few galaxies, find all the times they underwent a merger
  *        with mass ratio > 1:4, and print the relevant Subfind IDs.
  *

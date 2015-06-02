@@ -1,6 +1,5 @@
-/** @file custom_1.cpp
- * @brief For a few galaxies, find all the times they underwent a merger
- *        with mass ratio > 1:10, and the mass ratios of those mergers.
+/** @file custom_bcg.cpp
+ * @brief Print some info for the most massive galaxies in the simulation.
  *
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
@@ -22,16 +21,30 @@
 #include "../Util/TreeUtil.hpp"
 
 static constexpr float minor_merger_ratio = 1.0/10.0;
+static constexpr float major_merger_ratio = 1.0/4.0;
 
-/** @brief Find the last major/minor mergers for a given subhalo. */
+/** @brief Print the contributions from major/minor/all mergers for each snapshot. */
 void merger_history_sub(Subhalo sub) {
 
   // Print Subfind ID.
-  std::cout << "\n" << sub.index() << "\n";
+  std::cout << sub.index() << "\n";
 
   // Iterate over first progenitor
   auto first_prog = sub.first_progenitor();
   while (first_prog.is_valid()) {
+
+    // Print the following info for each step:
+    // snapnum, mstar, sfr, mstar_from_major_mergers, mstar_from_minor_mergers,
+    // mstar_from_all_mergers
+
+    std::cout << sub.snapnum() << ",";
+    std::cout << sub.data().SubhaloMassType[4] << ",";
+    std::cout << sub.data().SubhaloSFR << ",";
+
+    // Mass accretion from current snapshot
+    real_type mstar_from_major_mergers = 0.0;
+    real_type mstar_from_minor_mergers = 0.0;
+    real_type mstar_from_mergers = 0.0;
 
     // Iterate over next progenitor
     for (auto next_prog = first_prog.next_progenitor(); next_prog.is_valid();
@@ -59,27 +72,45 @@ void merger_history_sub(Subhalo sub) {
         continue;
       }
 
-      // Check if minor merger
-      float merger_ratio = stmax_pair.second.data().SubhaloMassType[4] / stmax_pair.first.data().SubhaloMassType[4];
-      if ((merger_ratio >= minor_merger_ratio) &&
-          (merger_ratio <= 1.0/minor_merger_ratio)) {
-        // Print info.
-        std::cout << sub.snapnum() << "," << std::min(merger_ratio, 1.0f/merger_ratio) << "\n";
+      real_type mass_primary = std::max(
+          stmax_pair.first.data().SubhaloMassType[4], stmax_pair.second.data().SubhaloMassType[4]);
+      real_type mass_secondary = std::min(
+          stmax_pair.first.data().SubhaloMassType[4], stmax_pair.second.data().SubhaloMassType[4]);
+
+      // Check if major merger
+      if (mass_secondary/mass_primary >= major_merger_ratio) {
+        mstar_from_major_mergers += mass_secondary;
       }
+      // Check if minor merger
+      if (mass_secondary/mass_primary >= minor_merger_ratio) {
+        mstar_from_minor_mergers += mass_secondary;
+      }
+      // Any merger
+      mstar_from_mergers += mass_secondary;
     }
+
+    std::cout << mstar_from_major_mergers << ",";
+    std::cout << mstar_from_minor_mergers << ",";
+    std::cout << mstar_from_mergers << "\n";
 
     // Next iteration
     sub = first_prog;
     first_prog = sub.first_progenitor();
   }
+
+  // Finished for this subhalo.
+  std::cout << "\n";
+
 }
 
 /** @brief Get snapshot of last major (minor) merger. */
-void shy_custom(const std::string& treedir) {
+void custom_bcg(const std::string& treedir) {
 
-  // Selected subhalos:
-  std::vector<index_type> subfind_ids = {219708, 262030, 377255, 267605, 195486, 386640};
   snapnum_type snapnum = 135;
+
+  // Selected subhalos (10 largest mstar)
+  std::vector<index_type> subfind_ids = {
+      0,  30430,  66080,  59384,  16937,  80734,  93165, 142714, 99148, 41088};
 
   // Load merger tree
   WallClock wall_clock;
@@ -99,23 +130,17 @@ void shy_custom(const std::string& treedir) {
 }
 
 
-int main(int argc, char** argv)
+int main()
 {
-  // Check input arguments
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " treedir\n";
-    exit(1);
-  }
-
-  // Read input
-  std::string treedir(argv[1]);
+  // Illustris-1
+  std::string treedir = "/n/ghernquist/vrodrigu/MergerTrees/output/Galaxies/Illustris/L75n1820FP";
 
   // Measure CPU and wall clock (real) time
   WallClock wall_clock;
   CPUClock cpu_clock;
 
   // Do stuff
-  shy_custom(treedir);
+  custom_bcg(treedir);
 
   // Print wall clock time and speedup
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";
