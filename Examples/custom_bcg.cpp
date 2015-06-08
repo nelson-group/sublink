@@ -108,7 +108,7 @@ void custom_bcg(const std::string& treedir) {
 
   snapnum_type snapnum = 135;
 
-  // Selected subhalos (10 largest mstar)
+  // Selected subhalos (10 largest mstar at z=0)
   std::vector<index_type> subfind_ids = {
       0,  30430,  66080,  59384,  16937,  80734,  93165, 142714, 99148, 41088};
 
@@ -128,7 +128,6 @@ void custom_bcg(const std::string& treedir) {
     merger_history_sub(sub);
   }
 }
-
 
 int main()
 {

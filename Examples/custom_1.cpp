@@ -1,6 +1,7 @@
 /** @file custom_1.cpp
- * @brief For a few galaxies, find all the times they underwent a merger
- *        with mass ratio > 1:10, and the mass ratios of those mergers.
+ * @brief For a few selected galaxies, find all the times they underwent a merger
+ *        with mass ratio > 1:10, and print the mass ratios of those mergers,
+ *        as well as fgas and g-r of the secondary.
  *
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
@@ -59,12 +60,17 @@ void merger_history_sub(Subhalo sub) {
         continue;
       }
 
+      real_type mass_ratio = std::min(
+          stmax_pair.second.data().SubhaloMassType[4] / stmax_pair.first.data().SubhaloMassType[4],
+          stmax_pair.first.data().SubhaloMassType[4] / stmax_pair.second.data().SubhaloMassType[4]);
+
       // Check if minor merger
-      float merger_ratio = stmax_pair.second.data().SubhaloMassType[4] / stmax_pair.first.data().SubhaloMassType[4];
-      if ((merger_ratio >= minor_merger_ratio) &&
-          (merger_ratio <= 1.0/minor_merger_ratio)) {
-        // Print info.
-        std::cout << sub.snapnum() << "," << std::min(merger_ratio, 1.0f/merger_ratio) << "\n";
+      if (mass_ratio >= minor_merger_ratio) {
+        // Print snapnum, mass_ratio, and fgas, g-r of secondary
+        std::cout << sub.snapnum() << ",";
+        std::cout << mass_ratio << ",";
+        std::cout << (stmax_pair.second.data().Mass - stmax_pair.second.data().SubhaloMassType[4]) / stmax_pair.second.data().Mass << ",";
+        std::cout << stmax_pair.second.data().SubhaloStellarPhotometrics[4] - stmax_pair.second.data().SubhaloStellarPhotometrics[5] << "\n";
       }
     }
 
@@ -77,8 +83,13 @@ void merger_history_sub(Subhalo sub) {
 /** @brief Get snapshot of last major (minor) merger. */
 void shy_custom(const std::string& treedir) {
 
+//  // Selected subhalos:
+//  std::vector<index_type> subfind_ids = {219708, 262030, 377255, 267605, 195486, 386640};
+//  snapnum_type snapnum = 135;
+
   // Selected subhalos:
-  std::vector<index_type> subfind_ids = {219708, 262030, 377255, 267605, 195486, 386640};
+  std::vector<index_type> subfind_ids = {
+      0,  30430,  66080,  59384,  16937,  80734,  93165, 142714, 99148, 41088};
   snapnum_type snapnum = 135;
 
   // Load merger tree
