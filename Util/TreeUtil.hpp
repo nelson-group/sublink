@@ -229,6 +229,63 @@ bool after_infall(Subhalo primary, Subhalo secondary) {
       secondary.first_subhalo_in_fof_group());
 }
 
+
+/** @brief Calculate stellar mass ratio of merger between @a secondary
+ *         and the main progenitor of @a desc.
+ * @pre @a primary and @a secondary are valid subhalos.
+ *
+ * @pre @a secondary.snapnum() <= @a desc.snapnum()
+ * @pre @a desc is descendant of @a secondary.
+ * @pre @a secondary is not along the main branch of @a desc
+ */
+real_type get_merger_mass_ratio(Subhalo desc, Subhalo secondary) {
+
+  // Outline
+  // Get main leafs and synchronize at earliest common snapshot
+  // Check that they belong to different fof groups
+  // Iterate forward in time until secondary is along main branch of primary,
+  // making sure to record the stmax pair
+  // calculate mass ratio (< 1)
+
+  // Check precondition
+  assert(primary.is_valid() && secondary.is_valid());
+
+  // Get main leaf progenitors
+  auto main_leaf_1 = primary.main_leaf_progenitor();
+  auto main_leaf_2 = secondary.main_leaf_progenitor();
+  // Synchronize them
+  if (main_leaf_1.snapnum() < main_leaf_2.snapnum()) {
+    auto synced_pair = synchronize_subhalos(main_leaf_1, main_leaf_2);
+    primary = synced_pair.first;
+    secondary = synced_pair.second;
+  }
+
+
+  // make sure they belong to different FoF groups.
+  // If I remember correctly, main_leaf_progenitor() cannot be invalid.
+  if (main_leaf_1.first_subhalo_in_fof_group() ==
+      main_leaf_2.first_subhalo_in_fof_group())
+    return -1;
+
+  // aqui me quede
+  // TO DO:
+  // forward_tmax
+  // iterate until main_leaf_progenitor is the same for primary and secondary
+
+
+  auto synced_pair = synchronize_subhalos(primary, secondary);
+  primary = synced_pair.first;
+  secondary = synced_pair.second;
+  if (!primary.is_valid() || !secondary.is_valid())
+    return false;
+  assert(primary.first_subhalo_in_fof_group().is_valid());
+  return (primary.first_subhalo_in_fof_group() ==
+      secondary.first_subhalo_in_fof_group());
+}
+
+
+
+
 /** @brief Return true if @a prog lies along the main branch of @a desc.
  * @pre @a desc and @a prog are valid subhalos.
  */
@@ -292,6 +349,10 @@ Subhalo at_stmax(Subhalo sub) {
  *         branch of @a primary was truncated.
  *
  * @pre @a primary and @a secondary are valid subhalos.
+ *
+ * TO DO: Generalization could walk forward in time to just before
+ * primary and seconary merge, and then call "at_stmax"
+ *
  */
 std::pair<Subhalo, Subhalo> get_stmax_pair(Subhalo primary,
     Subhalo secondary) {

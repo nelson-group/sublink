@@ -208,6 +208,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::vector<int8_t> InSitu(nparts, -1);
     std::vector<int8_t> AfterInfall(nparts, -1);
     std::vector<int8_t> StrippedFromGalaxy(nparts, -1);
+    std::vector<real_type> MergerMassRatio(nparts, -1);
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
     // Iterate over stellar particles
@@ -247,6 +248,20 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         InSitu[pos] = 0;
         AfterInfall[pos] = static_cast<int>(after_infall(cur_sub, form_sub));
         StrippedFromGalaxy[pos] = static_cast<int>(!is_descendant(cur_sub, form_sub));
+
+        if (!is_descendant(cur_sub, form_sub)) {
+          StrippedFromGalaxy[pos] = 1;
+        }
+        else {
+          StrippedFromGalaxy[pos] = 0;
+          MergerMassRatio[pos] = get_merger_mass_ratio(cur_sub, form_sub);
+
+          // aqui me quede
+
+        }
+
+
+
       }
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";

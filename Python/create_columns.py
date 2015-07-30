@@ -25,8 +25,10 @@ def read_block(basedir, snapnum, field_name, group_name):
     skip = 0
     doneflag = False
     while not doneflag:
-        filename = (basedir + '/groups_%s/groups_%s.%d.hdf5' %
-                    (str(snapnum).zfill(3), str(snapnum).zfill(3), filenum))
+        #name = 'groups'
+        name = 'fof_subhalo_tab'
+        filename = (basedir + '/groups_%s/%s_%s.%d.hdf5' %
+                (str(snapnum).zfill(3), name, str(snapnum).zfill(3), filenum))
 
         # Only proceed if file exists
         if not os.path.exists(filename):
@@ -136,8 +138,11 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
     # get info for all subhalo and FoF group quantities.
     # (Note that 'shape' is only used used to retrieve info about the second
     # dimension of the field, if any.)
-    groupfilename = (basedir + '/groups_%s/groups_%s.0.hdf5' %
-                (str(snapnum_last).zfill(3), str(snapnum_last).zfill(3)))
+
+    #name = 'groups'
+    name = 'fof_subhalo_tab'
+    groupfilename = (basedir + '/groups_%s/%s_%s.0.hdf5' %
+                (str(snapnum_last).zfill(3), name, str(snapnum_last).zfill(3)))
 
     f = h5py.File(groupfilename, 'r')
     subhalo_quantities = f['Subhalo'].keys()
