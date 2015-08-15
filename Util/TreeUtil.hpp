@@ -12,10 +12,14 @@
 #include "../InputOutput/ReadTreeHDF5.hpp"
 #include "TreeTypes.hpp"
 
-/** Get some types from ReadTreeHDF5.hpp and make them our own. */
+/** @brief Synonym for Tree::Snapshot from ReadTreeHDF5.hpp. */
 typedef Tree::Snapshot Snapshot;
+/** @brief Synonym for Tree::Subhalo from ReadTreeHDF5.hpp. */
 typedef Tree::Subhalo Subhalo;
 
+/** @brief Return the distance between @a pos1 and @a pos2 using periodic
+ *         boundary conditions on a 3D box with length @a box_size.
+ */
 real_type periodic_dist(const FloatArray<3>& pos1, const FloatArray<3>& pos2,
     const real_type box_size) {
   real_type d2 = 0;
@@ -38,9 +42,43 @@ real_type periodic_dist(const FloatArray<3>& pos1, const FloatArray<3>& pos2,
  */
 Subhalo back_in_time(Subhalo sub, snapnum_type snapnum) {
   assert(sub.is_valid());
-  while ((sub.snapnum() - snapnum > 0) && (sub.is_valid()))
+  while ((sub.snapnum() > snapnum) && (sub.is_valid()))
     sub = sub.first_progenitor();
   return sub;
+}
+
+/** @brief Get the descendant of @a sub at a given snapshot.
+ * @param[in] sub The Subhalo of interest.
+ * @param[in] snapnum The snapshot number.
+ * @pre @a sub is valid.
+ * @return The earliest descendant of @a sub such that
+ *         @a result.snapnum() >= @a snapnum, or an invalid Subhalo if
+ *         the "forward branch" is truncated before reaching @a snapnum.
+ */
+Subhalo forward_in_time(Subhalo sub, snapnum_type snapnum) {
+  assert(sub.is_valid());
+  while ((sub.snapnum() < snapnum) && (sub.is_valid()))
+    sub = sub.descendant();
+  return sub;
+}
+
+/** @brief Return true if @a prog lies along the main branch of @a desc.
+ * @pre @a desc and @a prog are valid subhalos.
+ */
+bool along_main_branch(Subhalo desc, Subhalo prog) {
+  return (prog.data().SubhaloID >= desc.data().SubhaloID) &&
+         (prog.data().SubhaloID <= desc.data().MainLeafProgenitorID);
+}
+
+/** @brief Check if @a possible_desc is a descendant of @a possible_prog.
+ * @pre @a desc and @a prog are valid subhalos.
+ *
+ * @note In this implementation a subhalo can be its own descendant.
+ *       Maybe this function should be called "belongs_to_subtree".
+ */
+bool is_descendant(Subhalo desc, Subhalo prog) {
+  return (prog.data().SubhaloID >= desc.data().SubhaloID) &&
+         (prog.data().SubhaloID <= desc.data().LastProgenitorID);
 }
 
 /** @brief Get the progenitors of @a primary and @a secondary at
@@ -229,80 +267,65 @@ bool after_infall(Subhalo primary, Subhalo secondary) {
       secondary.first_subhalo_in_fof_group());
 }
 
-
-/** @brief Calculate stellar mass ratio of merger between @a secondary
- *         and the main progenitor of @a desc.
- * @pre @a primary and @a secondary are valid subhalos.
- *
- * @pre @a secondary.snapnum() <= @a desc.snapnum()
+/** @brief Calculate the stellar mass ratio of the merger between @a secondary
+ *         and the main progenitor branch of @a desc.
+ * @pre @a desc and @a secondary are valid subhalos.
  * @pre @a desc is descendant of @a secondary.
  * @pre @a secondary is not along the main branch of @a desc
  */
 real_type get_merger_mass_ratio(Subhalo desc, Subhalo secondary) {
+  // Check preconditions
+  assert(desc.is_valid() && secondary.is_valid());
+  //assert(is_descendant(desc, secondary));
+  //assert(!along_main_branch(desc, secondary));
 
-  // Outline
-  // Get main leafs and synchronize at earliest common snapshot
-  // Check that they belong to different fof groups
-  // Iterate forward in time until secondary is along main branch of primary,
-  // making sure to record the stmax pair
-  // calculate mass ratio (< 1)
-
-  // Check precondition
+  // Move primary and secondary subhalos to earliest common snapshot.
+  auto main_leaf_1 = desc.main_leaf_progenitor();
+  auto main_leaf_2 = secondary.main_leaf_progenitor();
+  auto common_snapnum = std::max(main_leaf_1.snapnum(), main_leaf_2.snapnum());
+  auto primary = back_in_time(desc, common_snapnum);
+  secondary = back_in_time(secondary, common_snapnum);  // overwrite "secondary"
   assert(primary.is_valid() && secondary.is_valid());
 
-  // Get main leaf progenitors
-  auto main_leaf_1 = primary.main_leaf_progenitor();
-  auto main_leaf_2 = secondary.main_leaf_progenitor();
-  // Synchronize them
-  if (main_leaf_1.snapnum() < main_leaf_2.snapnum()) {
-    auto synced_pair = synchronize_subhalos(main_leaf_1, main_leaf_2);
-    primary = synced_pair.first;
-    secondary = synced_pair.second;
+  // Make sure that secondary.snapnum() >= primary.snapnum()
+  if (primary.snapnum() > secondary.snapnum())
+    secondary = secondary.descendant();
+
+  // Iterate forward in time to find the maximum stellar mass
+  real_type mstar_stmax_1 = 0;
+  real_type mstar_stmax_2 = 0;
+  while (true) {
+    // Move @a primary forward in time
+    assert(secondary.is_valid());
+    auto cur_snapnum = secondary.snapnum();
+    primary = forward_in_time(primary, cur_snapnum);
+    assert(primary.is_valid());
+    // If primary skipped this snapshot, or is for some other reason found
+    // at a later snapshot, "increment" secondary and try again.
+    if (primary.snapnum() != cur_snapnum) {
+      secondary = secondary.descendant();
+      continue;
+    }
+    // If the objects already merged, break.
+    if (primary == secondary) {
+      break;
+    }
+    // If we got here, then both primary and secondary are valid Subhalos at
+    // the same snapshot. Now we look at their stellar masses.
+    if (secondary.data().SubhaloMassType[4] > mstar_stmax_2) {
+      mstar_stmax_1 = primary.data().SubhaloMassType[4];
+      mstar_stmax_2 = secondary.data().SubhaloMassType[4];
+    }
+    // "Increment" secondary
+    secondary = secondary.descendant();
   }
 
-
-  // make sure they belong to different FoF groups.
-  // If I remember correctly, main_leaf_progenitor() cannot be invalid.
-  if (main_leaf_1.first_subhalo_in_fof_group() ==
-      main_leaf_2.first_subhalo_in_fof_group())
+  // If either stellar mass is zero, mass ratio is undefined.
+  if ((mstar_stmax_1 <= 0) || (mstar_stmax_2 <= 0))
     return -1;
 
-  // aqui me quede
-  // TO DO:
-  // forward_tmax
-  // iterate until main_leaf_progenitor is the same for primary and secondary
-
-
-  auto synced_pair = synchronize_subhalos(primary, secondary);
-  primary = synced_pair.first;
-  secondary = synced_pair.second;
-  if (!primary.is_valid() || !secondary.is_valid())
-    return false;
-  assert(primary.first_subhalo_in_fof_group().is_valid());
-  return (primary.first_subhalo_in_fof_group() ==
-      secondary.first_subhalo_in_fof_group());
-}
-
-
-
-
-/** @brief Return true if @a prog lies along the main branch of @a desc.
- * @pre @a desc and @a prog are valid subhalos.
- */
-bool along_main_branch(Subhalo desc, Subhalo prog) {
-  return (prog.data().SubhaloID >= desc.data().SubhaloID) &&
-         (prog.data().SubhaloID <= desc.data().MainLeafProgenitorID);
-}
-
-/** @brief Check if @a possible_desc is a descendant of @a possible_prog.
- * @pre @a desc and @a prog are valid subhalos.
- *
- * @note In this implementation a subhalo can be its own descendant.
- *       Maybe this function should be called "belongs_to_subtree".
- */
-bool is_descendant(Subhalo desc, Subhalo prog) {
-  return (prog.data().SubhaloID >= desc.data().SubhaloID) &&
-         (prog.data().SubhaloID <= desc.data().LastProgenitorID);
+  // Return mass ratio
+  return std::min(mstar_stmax_2/mstar_stmax_1, mstar_stmax_1/mstar_stmax_2);
 }
 
 /** Return the progenitor along the main branch which has the largest

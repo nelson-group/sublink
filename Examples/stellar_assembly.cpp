@@ -1,12 +1,15 @@
 /** @file stellar_assembly.cpp
- * @brief Determine the ex situ stellar fraction of galaxies using
- *        different methods.
+ * @brief For each particle with parttype=4 (mostly stars), determine if
+ *        it was formed in-situ or ex-situ, along with other information.
  *
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
 
 // Include some extra quantities from the merger trees:
 #define COUNT_MERGERS
+
+// Include main_leaf_progenitor
+#define EXTRA_POINTERS
 
 #include <iostream>
 #include <vector>
@@ -30,20 +33,26 @@
 // Type of stellar particles
 static constexpr int parttype = 4;
 
-/** Get some types from ReadTreeHDF5.hpp and make them our own. */
+/** @brief Synonym for Tree::Snapshot from ReadTreeHDF5.hpp. */
 typedef Tree::Snapshot Snapshot;
+/** @brief Synonym for Tree::Subhalo from ReadTreeHDF5.hpp. */
 typedef Tree::Subhalo Subhalo;
 
 /** Datatype for stellar particles. */
 struct ParticleInfo{
+  /** @brief ID of this particle. */
   part_id_type id;
+  /** @brief SubfindID of the subhalo where the particle formed. */
   index_type subfind_id_at_formation;
+  /** @brief SnapNum of the subhalo where the particle formed. */
   snapnum_type snapnum_at_formation;
   /** Constructor. */
   ParticleInfo(part_id_type id_, index_type subf_id_, snapnum_type snapnum_)
       : id(id_), subfind_id_at_formation(subf_id_),
         snapnum_at_formation(snapnum_) {
   }
+  /** Disable default constructor. */
+  ParticleInfo() = delete;
   /** Custom less-than operator used with std::lower_bound. */
   bool operator<(const part_id_type& other_id) {
     return id < other_id;
@@ -60,7 +69,6 @@ bool compareByID(const ParticleInfo& a, const ParticleInfo& b) {
  * @param[in,out] cur_stars Vector with stellar particle information.
  * @param[in] ParticleID Particle IDs of particles from new snapshot.
  * @param[in] SubfindID Subfind IDs of particles from new snapshot.
- * @param[in] basedir Directory with simulation output.
  * @param[in] snapnum Snapshot number of new snapshot.
  */
 void update_stars(std::vector<ParticleInfo>& cur_stars,
@@ -231,7 +239,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         continue;
 
       // If current star particle was formed outside of any subhalo,
-      // define as ex situ and leave other properties undefined (= -1).
+      // define as ex-situ and leave other properties undefined (= -1).
       if (cur_info.subfind_id_at_formation == -1) {
         InSitu[pos] = 0;
         continue;
@@ -241,27 +249,20 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
       auto cur_sub = tree.subhalo(snapnum, subfind_id);
       auto form_sub = tree.subhalo(cur_info.snapnum_at_formation,
                                    cur_info.subfind_id_at_formation);
+
       if (along_main_branch(cur_sub, form_sub))
         InSitu[pos] = 1;
       else {  // ex situ
         assert(form_sub.snapnum() < cur_sub.snapnum());
         InSitu[pos] = 0;
         AfterInfall[pos] = static_cast<int>(after_infall(cur_sub, form_sub));
-        StrippedFromGalaxy[pos] = static_cast<int>(!is_descendant(cur_sub, form_sub));
-
-        if (!is_descendant(cur_sub, form_sub)) {
-          StrippedFromGalaxy[pos] = 1;
-        }
-        else {
+        if (is_descendant(cur_sub, form_sub)) {
           StrippedFromGalaxy[pos] = 0;
           MergerMassRatio[pos] = get_merger_mass_ratio(cur_sub, form_sub);
-
-          // aqui me quede
-
         }
-
-
-
+        else {
+          StrippedFromGalaxy[pos] = 1;
+        }
       }
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
@@ -283,6 +284,8 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         H5::PredType::NATIVE_INT8);
     add_array(writefile, StrippedFromGalaxy, "StrippedFromGalaxy",
         H5::PredType::NATIVE_INT8);
+    add_array(writefile, MergerMassRatio, "MergerMassRatio",
+        H5::PredType::NATIVE_FLOAT);
 
     writefile.close();
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
@@ -293,6 +296,9 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
   }
 }
 
+/** @brief For each particle with parttype=4 (mostly stars), determine if
+ *         it was formed in-situ or ex-situ, along with other information.
+ */
 int main(int argc, char** argv)
 {
   // Check input arguments
