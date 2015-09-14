@@ -7,6 +7,7 @@
 # Executables to build
 EXEC += stellar_assembly
 EXEC += count_mergers
+EXEC += count_pairs
 EXEC += merger_history
 EXEC += infall_catalog
 EXEC += tree_test

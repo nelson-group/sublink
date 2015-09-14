@@ -267,6 +267,7 @@ bool after_infall(Subhalo primary, Subhalo secondary) {
       secondary.first_subhalo_in_fof_group());
 }
 
+#ifdef EXTRA_POINTERS
 /** @brief Calculate the stellar mass ratio of the merger between @a secondary
  *         and the main progenitor branch of @a desc.
  * @pre @a desc and @a secondary are valid subhalos.
@@ -327,6 +328,7 @@ real_type get_merger_mass_ratio(Subhalo desc, Subhalo secondary) {
   // Return mass ratio
   return std::min(mstar_stmax_2/mstar_stmax_1, mstar_stmax_1/mstar_stmax_2);
 }
+#endif
 
 /** Return the progenitor along the main branch which has the largest
  * mass (depending on merger tree type).
