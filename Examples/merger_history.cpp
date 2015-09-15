@@ -19,7 +19,7 @@
 #include "../InputOutput/ReadTreeHDF5.hpp"
 #include "../InputOutput/GeneralHDF5.hpp"
 #include "../Util/GeneralUtil.hpp"
-#include "../Util/SnapshotUtil.hpp"  // get_redshifts, get_times_Gyr
+#include "../Util/Cosmology.hpp"  // cosmo::get_redshifts, cosmo::get_times_Gyr
 #include "../Util/TreeUtil.hpp"
 
 static constexpr float major_merger_ratio = 1.0/4.0;
@@ -451,8 +451,8 @@ void merger_history_all(const std::string& basedir, const std::string& treedir,
     const snapnum_type snapnum_last) {
 
   // Get time (in Gyr) and redshift for each snapshot.
-  auto redshifts_all = get_redshifts();
-  auto times_all = get_times_Gyr();
+  auto redshifts_all = cosmo::get_redshifts();
+  auto times_all = cosmo::get_times_Gyr();
 
   // Load merger tree
   WallClock wall_clock;
