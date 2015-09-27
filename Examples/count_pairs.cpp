@@ -6,6 +6,7 @@
 
 // Include some extra quantities from the merger trees:
 #define COUNT_MERGERS
+#define EXTRA_POINTERS
 
 #include <vector>
 #include <string>
@@ -63,17 +64,31 @@ real_type get_projected_separation(const Point pos1, const Point pos2) {
   return norm(dr);
 }
 
-/** Return a vector with Galaxies within an annulus centered on @a center_gal
- * with radii (in cylindrical coordinates) rmin and rmax. */
-std::vector<Galaxy> annulus_query(const SpaceSearcherType& s,
-    const Galaxy center_gal, const real_type rmin, const real_type rmax,
-    const real_type box_size) {
+/** @brief Check if the line-of-sight (z-direction) velocity difference
+ * between @a center_gal and @a other_gal is below the specified threshold. */
+real_type get_velocity_difference(const Point center_pos, const Point center_vel,
+    const Point other_pos, const Point other_vel, const real_type cur_H_kpc_h,
+    const real_type cur_z) {
 
-  auto center_pos = center_gal.position();
+  // Peculiar velocity in km/s (no scaling required, according to wiki)
+  real_type peculiar_velocity = other_vel[2] - center_vel[2];
+  // Relative position along line of sight (z-axis) in kpc/h (note conversion to physical)
+  real_type relative_position = (other_pos[2] - center_pos[2]) / (1.0 + cur_z);
+  // Hubble flow in km/s (can be negative)
+  real_type hubble_flow = relative_position * cur_H_kpc_h;
+
+  return peculiar_velocity + hubble_flow;
+}
+
+/** Return a vector with Galaxies within an annulus centered on @a center_pos
+ * with radii (in cylindrical coordinates) between rmin and rmax. */
+std::vector<Galaxy> annulus_query(const SpaceSearcherType& s,
+    const Point center_pos, const real_type rmin, const real_type rmax) {
 
   // Find points inside this bounding box
-  BoundingBox bb(center_gal.position() - Point(rmax,rmax,box_size),
-                 center_gal.position() + Point(rmax,rmax,box_size));
+  Point center_pos_2d = Point(center_pos[0], center_pos[1], 0.0);
+  BoundingBox bb(center_pos_2d - Point(rmax,rmax,1.0),
+                 center_pos_2d + Point(rmax,rmax,1.0));
 
   // Iterate over points in bounding box using SpaceSearcher
   // and keep the ones that are inside the region of interest.
@@ -87,21 +102,6 @@ std::vector<Galaxy> annulus_query(const SpaceSearcherType& s,
     }
   }
   return annulus_gals;
-}
-
-/** @brief Check if the line-of-sight (z-direction) velocity difference
- * between @a center_gal and @a other_gal is below the specified threshold. */
-real_type get_velocity_difference(const Galaxy center_gal, const Galaxy other_gal,
-    const real_type cur_H_kpc_h) {
-
-  // Relative position along line of sight (z-axis) in kpc/h
-  real_type relative_position = other_gal.position()[2] - center_gal.position()[2];
-  // Peculiar velocity in km/s (divide by scale factor "a" or something?)
-  real_type peculiar_velocity = (other_gal.value().velocity[2] - center_gal.value().velocity[2]);
-  // Hubble flow velocity in km/s
-  real_type hubble_flow = relative_position * cur_H_kpc_h;  // can be negative
-
-  return peculiar_velocity + hubble_flow;
 }
 
 /** @brief Return a vector of vectors with overdensities for all snapshots. */
@@ -151,48 +151,73 @@ std::vector<std::vector<real_type>> read_overdensities(
 }
 
 /** @brief Count close pairs for a given subhalo and print data to file. */
-void count_pairs_sub(const AllGalaxiesType& ag, const SpaceSearcherType& s,
+void count_pairs_sub(const SpaceSearcherType& s,
     const Tree& tree, const snapnum_type snapnum, const Subhalo center_sub,
+    const Point center_pos, const Point center_vel,
     const real_type rmin_comoving, const real_type rmax_comoving,
     const real_type velocity_threshold, const real_type mstar_min,
-    const real_type cur_H_kpc_h, const real_type box_size,
+    const real_type cur_H_kpc_h, const real_type cur_z,
     const std::vector<std::vector<real_type>>& overdensities,
     std::ofstream& writefile) {
 
   assert(center_sub.is_valid());
-
-  auto center_gal = ag.galaxy(center_sub.index());  // "spatial" object
 
   // Only proceed if current galaxy is above minimum mass
   if (center_sub.data().SubhaloMassType[parttype_stars] < mstar_min)
     return;
 
   // Iterate over neighbors
-  auto neighbors = annulus_query(s, center_gal, rmin_comoving, rmax_comoving, box_size);
+  auto neighbors = annulus_query(s, center_pos, rmin_comoving, rmax_comoving);
   for (auto it = neighbors.begin(); it != neighbors.end(); ++it) {
-    auto other_gal = *it;
+    auto other_gal = *it;  // "spatial" object
 
     // Just in case
-    if (center_gal == other_gal) {
+    if (center_sub.index() == other_gal.value().subfind_id) {
       std::cout << "Skipping repeated galaxy...\n";
       continue;
     }
 
     // Only proceed if (physical) velocity difference is less than threshold
-    real_type vel_diff = get_velocity_difference(center_gal, other_gal, cur_H_kpc_h);
+    real_type vel_diff = get_velocity_difference(center_pos, center_vel,
+        other_gal.position(), other_gal.value().velocity, cur_H_kpc_h, cur_z);
     if (std::abs(vel_diff) > velocity_threshold)
       continue;
 
-    // If we got here, we have found a close pair. Get masses, etc.
+    // If we got here, we have found a close pair.
     auto other_sub = tree.subhalo(snapnum, other_gal.value().subfind_id);
-
     assert(other_sub.is_valid());
 
-    // Properties at current snapshot
+    // Avoid double counting by making sure that the primary is more massive
+    if (center_sub.data().SubhaloMassType[parttype_stars] <=
+        other_sub.data().SubhaloMassType[parttype_stars])
+      continue;
+
+    // Print properties of close pair
     writefile << std::setprecision(10) <<
-        get_projected_separation(center_gal.position(), other_gal.position()) << "," <<
-        other_gal.position()[2] - center_gal.position()[2] << "," <<
-        vel_diff << "," <<
+        get_projected_separation(center_pos, other_gal.position()) << "," <<
+        other_gal.position()[2] - center_pos[2] << "," <<
+        vel_diff << ",";
+
+    // Print properties of descendant (if any)
+    real_type mstar_0 = -1;
+    real_type sfr_0 = -1;
+    real_type overdensity_0 = -1;
+    snapnum_type snapnum_merger = -1;
+    auto desc = get_merger_remnant(center_sub, other_sub);
+    if (desc.is_valid()) {
+      mstar_0 = desc.data().SubhaloMassType[parttype_stars];
+      sfr_0 = desc.data().SubhaloSFR;
+      overdensity_0 = overdensities[desc.snapnum()][desc.index()];
+      snapnum_merger = desc.snapnum();
+    }
+    writefile << std::setprecision(10) <<
+        mstar_0 << "," <<
+        sfr_0 << "," <<
+        overdensity_0 << "," <<
+        snapnum_merger << ",";
+
+    // Properties at current time
+    writefile << std::setprecision(10) <<
         center_sub.data().SubhaloMassType[parttype_stars] << "," <<
         center_sub.data().SubhaloSFR << "," <<
         overdensities[center_sub.snapnum()][center_sub.index()] << "," <<
@@ -347,6 +372,7 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
 
     // Create Galaxy objects and add to AllGalaxies container
     // (only consider objects that exist in the merger trees).
+    // (careful: do not try to access galaxies via AllGalaxies::galaxy(i)
     std::cout << "Creating galaxy objects...\n";
     wall_clock.start();
     AllGalaxiesType ag;
@@ -358,7 +384,7 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
     // (careful: do not try to access ghost galaxies via AllGalaxies::galaxy(i)
     // (optimization: only include ghost galaxies within 100 kpc/h of each border)
     // (Another possible optimization: implement 2D spatial search,
-    // but probably none of this is necessary because of slow reading speed).
+    // but probably none of this is necessary because of slow reading speeds).
     for (auto sub_it = snap.begin(); sub_it != snap.end(); ++sub_it) {
       auto sub_index = (*sub_it).index();
       for (int i = 0; i < 3; ++i) {
@@ -381,9 +407,11 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
     wall_clock.start();
     for (auto sub_it = snap.begin(); sub_it != snap.end(); ++sub_it) {
       auto center_sub = *sub_it;
-      count_pairs_sub(ag, s, tree, snapnum, center_sub,
+      auto center_pos = sub_pos[center_sub.index()];
+      auto center_vel = sub_vel[center_sub.index()];
+      count_pairs_sub(s, tree, snapnum, center_sub, center_pos, center_vel,
           rmin_comoving, rmax_comoving, velocity_threshold, mstar_min,
-          cur_H_kpc_h, box_size, overdensities, writefile);
+          cur_H_kpc_h, cur_z, overdensities, writefile);
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 

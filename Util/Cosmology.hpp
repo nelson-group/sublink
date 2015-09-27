@@ -38,7 +38,7 @@ real_type H_Gyr(const real_type z) {
   return H0_Gyr * std::sqrt(Omega_m * std::pow(1.0+z, 3.0) + Omega_L);
 }
 
-/** @brief Return the Hubble parameter H(z) in units of Gyr^{-1}. */
+/** @brief Return the Hubble parameter H(z) in units of (km/s)/(kpc/h). */
 real_type H_kpc_h(const real_type z) {
   return H0_kpc_h * std::sqrt(Omega_m * std::pow(1.0+z, 3.0) + Omega_L);
 }

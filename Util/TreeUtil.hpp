@@ -81,6 +81,30 @@ bool is_descendant(Subhalo desc, Subhalo prog) {
          (prog.data().SubhaloID <= desc.data().LastProgenitorID);
 }
 
+#ifdef EXTRA_POINTERS
+/** @brief Return the subhalo immediately after the merger of @a primary
+ * and @a secondary. Return an invalid subhalo if they do not merge.
+ *
+ * @pre @a primary != @a secondary
+ */
+Subhalo get_merger_remnant(Subhalo primary, Subhalo secondary) {
+
+  // If the two objects are the same, something is probably wrong.
+  assert(primary != secondary);
+
+  // If objects do not merge, return an invalid subhalo.
+  if (primary.root_descendant() != secondary.root_descendant())
+    return Subhalo();
+
+  // Iterate along "forward" branch of secondary until it joins
+  // the main branch of the root descendant.
+  auto root_desc = primary.root_descendant();
+  while (secondary.main_leaf_progenitor() != root_desc.main_leaf_progenitor())
+    secondary = secondary.descendant();
+  return secondary;
+}
+#endif
+
 /** @brief Get the progenitors of @a primary and @a secondary at
  *         the moment of infall or earlier.
  * @param[in] primary The primary subhalo.

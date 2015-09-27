@@ -177,14 +177,6 @@ public:
     return Galaxy(this, galaxies_.size()-1);
   }
 
-  /** @brief Return the galaxy with index @a i.
-   * @pre 0 <= i < num_galaxies()
-   */
-  Galaxy galaxy(size_type i) const {
-    assert(i < num_galaxies());
-    return Galaxy(this, i);
-  }
-
   ///////////////
   // Iterators //
   ///////////////
