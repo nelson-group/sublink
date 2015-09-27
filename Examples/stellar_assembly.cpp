@@ -29,6 +29,7 @@
 #include "../Util/SnapshotUtil.hpp"
 #include "../Util/GeneralUtil.hpp"
 #include "../Util/TreeUtil.hpp"
+#include "../Spatial/Point.hpp"
 
 // Type of stellar particles
 static constexpr int parttype = 4;
@@ -44,11 +45,15 @@ struct ParticleInfo{
   part_id_type id;
   /** @brief SubfindID of the subhalo where the particle formed. */
   index_type subfind_id_at_formation;
+  /** @brief Distance to galactic center at the time of formation */
+  real_type distance_at_formation;
   /** @brief SnapNum of the subhalo where the particle formed. */
   snapnum_type snapnum_at_formation;
   /** Constructor. */
-  ParticleInfo(part_id_type id_, index_type subf_id_, snapnum_type snapnum_)
+  ParticleInfo(part_id_type id_, index_type subf_id_,
+      real_type distance_at_formation_, snapnum_type snapnum_)
       : id(id_), subfind_id_at_formation(subf_id_),
+        distance_at_formation(distance_at_formation_),
         snapnum_at_formation(snapnum_) {
   }
   /** Disable default constructor. */
@@ -64,6 +69,67 @@ bool compareByID(const ParticleInfo& a, const ParticleInfo& b) {
   return a.id < b.id;
 }
 
+/** Get galactocentric distance of each stellar particle in units of
+ * the stellar half-mass radius.
+ */
+std::vector<real_type> get_galactocentric_distances(
+    const std::string& basedir, const snapnum_type snapnum,
+    const std::vector<index_type>& SubfindID,
+    const std::vector<uint32_t>& sub_offset) {
+
+  uint64_t nparts = SubfindID.size();
+
+  // Get box size from snapshot header
+  std::stringstream tmp_stream;
+  tmp_stream << basedir << "/snapdir_" <<
+      std::setfill('0') << std::setw(3) << snapnum << "/snap_" <<
+      std::setfill('0') << std::setw(3) << snapnum << ".0.hdf5";
+  std::string file_name = tmp_stream.str();
+  auto box_size = static_cast<real_type>(
+      arepo::get_scalar_attribute<double>(file_name, "BoxSize"));
+
+  // Read particle positions.
+  // AD HOC: convert positions from double to float
+  std::vector<Point> all_pos;
+  if ((basedir == "/n/hernquistfs1/Illustris/Runs/L75n1820FP/output") &&
+      (snapnum >= 72)) {
+    auto all_pos_double = arepo::read_block<DoubleArray<3>>(
+        basedir, snapnum, "Coordinates", parttype);
+    all_pos = std::vector<Point>(all_pos_double.begin(),
+        all_pos_double.end());
+  }
+  else {
+    all_pos = arepo::read_block<Point>(
+        basedir, snapnum, "Coordinates", parttype);
+  }
+  assert(all_pos.size() == nparts);
+
+  // Read stellar half-mass radius
+  auto sub_halfmassrad = subfind::read_block<real_type>(
+      basedir, snapnum, "Subhalo", "SubhaloHalfmassRadType", parttype);
+
+  // Store results here
+  std::vector<real_type> ParticleDistance(nparts, -1);
+
+  // Iterate over stellar particles.
+  for (uint64_t i = 0; i < SubfindID.size(); ++i) {
+    auto sub_index = SubfindID[i];
+    // Only proceed if stellar particle was actually formed inside a subhalo.
+    if (sub_index == -1)
+      continue;
+    // Take boundary conditions into account
+    auto dx = all_pos[i] - all_pos[sub_offset[SubfindID[i]]];
+    for (int k = 0; k < 3; ++k) {
+      if (std::abs(dx[k]) > 0.5*box_size)
+        dx[k] = dx[k] - std::copysign(box_size, dx[k] - 0.5*box_size);
+    }
+    // Only store if stellar half-mass radius is well defined.
+    if (sub_halfmassrad[sub_index] > 0)
+      ParticleDistance[i] = norm(dx) / sub_halfmassrad[sub_index];
+  }
+  return ParticleDistance;
+}
+
 /** @brief Update @a cur_stars structure with information from new snapshot.
  *
  * @param[in,out] cur_stars Vector with stellar particle information.
@@ -74,6 +140,7 @@ bool compareByID(const ParticleInfo& a, const ParticleInfo& b) {
 void update_stars(std::vector<ParticleInfo>& cur_stars,
     const std::vector<part_id_type>& ParticleID,
     const std::vector<index_type>& SubfindID,
+    const std::vector<real_type>& ParticleDistance,
     const snapnum_type snapnum) {
 
   std::vector<ParticleInfo> stars_aux;
@@ -86,7 +153,7 @@ void update_stars(std::vector<ParticleInfo>& cur_stars,
   uint64_t nparts = ParticleID.size();
   stars_aux.reserve(stars_aux.size() + nparts);
   for (uint64_t i = 0; i < nparts; ++i)
-    stars_aux.emplace_back(ParticleInfo(ParticleID[i], SubfindID[i], snapnum));
+    stars_aux.emplace_back(ParticleID[i], SubfindID[i], ParticleDistance[i], snapnum);
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
   // Sort array
@@ -205,8 +272,15 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
+    // Calculate galactocentric distances
+    std::cout << "Calculating galactocentric distances...\n";
+    wall_clock.start();
+    auto ParticleDistance = get_galactocentric_distances(basedir,
+        snapnum, SubfindID, sub_offset);
+    std::cout << "Time: " << wall_clock.seconds() << " s.\n";
+
     // Update cur_stars with info from current snapshot.
-    update_stars(cur_stars, ParticleID, SubfindID, snapnum);
+    update_stars(cur_stars, ParticleID, SubfindID, ParticleDistance, snapnum);
 
     // Initialize some output arrays
     std::cout << "Initializing some output arrays...\n";
@@ -217,6 +291,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::vector<int8_t> AfterInfall(nparts, -1);
     std::vector<int8_t> StrippedFromGalaxy(nparts, -1);
     std::vector<real_type> MergerMassRatio(nparts, -1);
+    std::vector<real_type> DistanceAtFormation(nparts, -1);
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
     // Iterate over stellar particles
@@ -231,6 +306,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
 
       SubfindIDAtFormation[pos] = cur_info.subfind_id_at_formation;
       SnapNumAtFormation[pos] = cur_info.snapnum_at_formation;
+      DistanceAtFormation[pos] = cur_info.distance_at_formation;
 
       // If current star particle does not currently belong to any subhalo,
       // leave most properties undefined (= -1).
@@ -285,6 +361,8 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     add_array(writefile, StrippedFromGalaxy, "StrippedFromGalaxy",
         H5::PredType::NATIVE_INT8);
     add_array(writefile, MergerMassRatio, "MergerMassRatio",
+        H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, DistanceAtFormation, "DistanceAtFormation",
         H5::PredType::NATIVE_FLOAT);
 
     writefile.close();
