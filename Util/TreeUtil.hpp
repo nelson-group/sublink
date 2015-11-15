@@ -310,13 +310,13 @@ bool after_infall(Subhalo primary, Subhalo secondary) {
  *         between @a primary and @a secondary.
  * @pre @a primary and @a secondary are valid subhalos.
  * @pre @a secondary is not along the main branch of @a primary
- * @pre @a primary and @a secondary will eventually merge.
+ *
+ * @note @a primary and @a secondary need not merge eventually.
  */
 real_type get_merger_mass_ratio(Subhalo primary, Subhalo secondary) {
   // Check preconditions
   //assert(primary.is_valid() && secondary.is_valid());
   //assert(!along_main_branch(primary, secondary));
-  //assert(eventually_merge(primary, secondary));
 
   // Move primary and secondary subhalos to earliest common snapshot.
   auto main_leaf_1 = primary.main_leaf_progenitor();
@@ -324,7 +324,7 @@ real_type get_merger_mass_ratio(Subhalo primary, Subhalo secondary) {
   auto common_snapnum = std::max(main_leaf_1.snapnum(), main_leaf_2.snapnum());
   primary = back_in_time(primary, common_snapnum);  // overwrite "primary"
   secondary = back_in_time(secondary, common_snapnum);  // overwrite "secondary"
-  assert(primary.is_valid() && secondary.is_valid());
+  //assert(primary.is_valid() && secondary.is_valid());
 
   // Make sure that secondary.snapnum() >= primary.snapnum()
   if (primary.snapnum() > secondary.snapnum())
@@ -334,12 +334,20 @@ real_type get_merger_mass_ratio(Subhalo primary, Subhalo secondary) {
   real_type mstar_stmax_1 = 0;
   real_type mstar_stmax_2 = 0;
   while (true) {
-    //assert(secondary.is_valid());
-
-    // Move @a primary forward in time
+    // If secondary is invalid, we have reached the end of the simulation
+    // (or its root branch is truncated)
+    if (!secondary.is_valid()) {
+      break;
+    }
+    // Move primary forward in time
     auto cur_snapnum = secondary.snapnum();
     primary = forward_in_time(primary, cur_snapnum);
-    //assert(primary.is_valid());
+
+    // If primary is invalid, we have reached the end of the simulation
+    // (or its root branch is truncated)
+    if (!primary.is_valid()) {
+      break;
+    }
 
     // If primary skipped this snapshot, or is for some other reason found
     // at a later snapshot, "increment" secondary and try again.

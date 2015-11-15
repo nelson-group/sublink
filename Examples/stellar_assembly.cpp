@@ -290,7 +290,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::vector<snapnum_type> SnapNumAtFormation(nparts, -1);
     std::vector<int8_t> InSitu(nparts, -1);
     std::vector<int8_t> AfterInfall(nparts, -1);
-    std::vector<int8_t> StrippedFromGalaxy(nparts, -1);
+    std::vector<int8_t> AccretionOrigin(nparts, -1);
     std::vector<real_type> MergerMassRatio(nparts, -1);
     std::vector<real_type> DistanceAtFormation(nparts, -1);
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
@@ -333,10 +333,14 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         assert(form_sub.snapnum() < cur_sub.snapnum());
         InSitu[pos] = 0;
         AfterInfall[pos] = static_cast<int>(after_infall(cur_sub, form_sub));
-        StrippedFromGalaxy[pos] = static_cast<int>(!is_descendant(cur_sub, form_sub));
-        if (eventually_merge(cur_sub, form_sub)) {
-          MergerMassRatio[pos] = get_merger_mass_ratio(cur_sub, form_sub);
-        }
+        if (is_descendant(cur_sub, form_sub))
+          AccretionOrigin[pos] = 0;  // completed merger
+        else if (eventually_merge(cur_sub, form_sub))
+          AccretionOrigin[pos] = 1;  // ongoing merger
+        else
+          AccretionOrigin[pos] = 2;  // "flyby"
+        // Merger mass ratio can be determined in any of the above cases:
+        MergerMassRatio[pos] = get_merger_mass_ratio(cur_sub, form_sub);
       }
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
@@ -356,7 +360,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         H5::PredType::NATIVE_INT8);
     add_array(writefile, AfterInfall, "AfterInfall",
         H5::PredType::NATIVE_INT8);
-    add_array(writefile, StrippedFromGalaxy, "StrippedFromGalaxy",
+    add_array(writefile, AccretionOrigin, "AccretionOrigin",
         H5::PredType::NATIVE_INT8);
     add_array(writefile, MergerMassRatio, "MergerMassRatio",
         H5::PredType::NATIVE_FLOAT);
