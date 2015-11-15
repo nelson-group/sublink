@@ -39,7 +39,7 @@ typedef Tree::Snapshot Snapshot;
 /** @brief Synonym for Tree::Subhalo from ReadTreeHDF5.hpp. */
 typedef Tree::Subhalo Subhalo;
 
-/** Datatype for stellar particles. */
+/** @brief Datatype for stellar particles. */
 struct ParticleInfo{
   /** @brief ID of this particle. */
   part_id_type id;
@@ -64,12 +64,12 @@ struct ParticleInfo{
   }
 };
 
-/** Comparison function to sort by particle ID. */
+/** @brief Comparison function to sort by particle ID. */
 bool compareByID(const ParticleInfo& a, const ParticleInfo& b) {
   return a.id < b.id;
 }
 
-/** Get galactocentric distance of each stellar particle in units of
+/** @brief Get galactocentric distance of each stellar particle in units of
  * the stellar half-mass radius.
  */
 std::vector<real_type> get_galactocentric_distances(
@@ -135,6 +135,7 @@ std::vector<real_type> get_galactocentric_distances(
  * @param[in,out] cur_stars Vector with stellar particle information.
  * @param[in] ParticleID Particle IDs of particles from new snapshot.
  * @param[in] SubfindID Subfind IDs of particles from new snapshot.
+ * @param[in] ParticleDistance Vector with particle distances.
  * @param[in] snapnum Snapshot number of new snapshot.
  */
 void update_stars(std::vector<ParticleInfo>& cur_stars,
@@ -332,12 +333,9 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         assert(form_sub.snapnum() < cur_sub.snapnum());
         InSitu[pos] = 0;
         AfterInfall[pos] = static_cast<int>(after_infall(cur_sub, form_sub));
-        if (is_descendant(cur_sub, form_sub)) {
-          StrippedFromGalaxy[pos] = 0;
+        StrippedFromGalaxy[pos] = static_cast<int>(!is_descendant(cur_sub, form_sub));
+        if (eventually_merge(cur_sub, form_sub)) {
           MergerMassRatio[pos] = get_merger_mass_ratio(cur_sub, form_sub);
-        }
-        else {
-          StrippedFromGalaxy[pos] = 1;
         }
       }
     }

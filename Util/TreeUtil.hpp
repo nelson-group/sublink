@@ -62,14 +62,17 @@ Subhalo forward_in_time(Subhalo sub, snapnum_type snapnum) {
   return sub;
 }
 
+#ifdef EXTRA_POINTERS
 /** @brief Return true if @a prog lies along the main branch of @a desc.
- * @pre @a desc and @a prog are valid subhalos.
+ * @pre @a sub1 and @a sub2 are valid subhalos.
+ * @note @a sub1 and @a sub2 need not be time-ordered.
  */
-bool along_main_branch(Subhalo desc, Subhalo prog) {
-  return (prog.data().SubhaloID >= desc.data().SubhaloID) &&
-         (prog.data().SubhaloID <= desc.data().MainLeafProgenitorID);
+bool along_main_branch(Subhalo sub1, Subhalo sub2) {
+  return sub1.data().MainLeafProgenitorID == sub2.data().MainLeafProgenitorID;
 }
+#endif
 
+#ifdef EXTRA_POINTERS
 /** @brief Check if @a possible_desc is a descendant of @a possible_prog.
  * @pre @a desc and @a prog are valid subhalos.
  *
@@ -80,12 +83,23 @@ bool is_descendant(Subhalo desc, Subhalo prog) {
   return (prog.data().SubhaloID >= desc.data().SubhaloID) &&
          (prog.data().SubhaloID <= desc.data().LastProgenitorID);
 }
+#endif
+
+#ifdef EXTRA_POINTERS
+/** @brief Check if @a primary and @a secondary eventually merge.
+ * @pre @a primary != @a secondary.
+ */
+bool eventually_merge(Subhalo primary, Subhalo secondary) {
+  assert(primary != secondary);
+  return primary.data().RootDescendantID == secondary.data().RootDescendantID;
+}
+#endif
 
 #ifdef EXTRA_POINTERS
 /** @brief Return the subhalo immediately after the merger of @a primary
  * and @a secondary. Return an invalid subhalo if they do not merge.
  *
- * @pre @a primary != @a secondary
+ * @pre @a primary != @a secondary.
  */
 Subhalo get_merger_remnant(Subhalo primary, Subhalo secondary) {
 
@@ -292,23 +306,23 @@ bool after_infall(Subhalo primary, Subhalo secondary) {
 }
 
 #ifdef EXTRA_POINTERS
-/** @brief Calculate the stellar mass ratio of the merger between @a secondary
- *         and the main progenitor branch of @a desc.
- * @pre @a desc and @a secondary are valid subhalos.
- * @pre @a desc is descendant of @a secondary.
- * @pre @a secondary is not along the main branch of @a desc
+/** @brief Calculate the stellar mass ratio of the merger
+ *         between @a primary and @a secondary.
+ * @pre @a primary and @a secondary are valid subhalos.
+ * @pre @a secondary is not along the main branch of @a primary
+ * @pre @a primary and @a secondary will eventually merge.
  */
-real_type get_merger_mass_ratio(Subhalo desc, Subhalo secondary) {
+real_type get_merger_mass_ratio(Subhalo primary, Subhalo secondary) {
   // Check preconditions
-  assert(desc.is_valid() && secondary.is_valid());
-  //assert(is_descendant(desc, secondary));
-  //assert(!along_main_branch(desc, secondary));
+  //assert(primary.is_valid() && secondary.is_valid());
+  //assert(!along_main_branch(primary, secondary));
+  //assert(eventually_merge(primary, secondary));
 
   // Move primary and secondary subhalos to earliest common snapshot.
-  auto main_leaf_1 = desc.main_leaf_progenitor();
+  auto main_leaf_1 = primary.main_leaf_progenitor();
   auto main_leaf_2 = secondary.main_leaf_progenitor();
   auto common_snapnum = std::max(main_leaf_1.snapnum(), main_leaf_2.snapnum());
-  auto primary = back_in_time(desc, common_snapnum);
+  primary = back_in_time(primary, common_snapnum);  // overwrite "primary"
   secondary = back_in_time(secondary, common_snapnum);  // overwrite "secondary"
   assert(primary.is_valid() && secondary.is_valid());
 
@@ -320,11 +334,13 @@ real_type get_merger_mass_ratio(Subhalo desc, Subhalo secondary) {
   real_type mstar_stmax_1 = 0;
   real_type mstar_stmax_2 = 0;
   while (true) {
+    //assert(secondary.is_valid());
+
     // Move @a primary forward in time
-    assert(secondary.is_valid());
     auto cur_snapnum = secondary.snapnum();
     primary = forward_in_time(primary, cur_snapnum);
-    assert(primary.is_valid());
+    //assert(primary.is_valid());
+
     // If primary skipped this snapshot, or is for some other reason found
     // at a later snapshot, "increment" secondary and try again.
     if (primary.snapnum() != cur_snapnum) {
@@ -346,8 +362,9 @@ real_type get_merger_mass_ratio(Subhalo desc, Subhalo secondary) {
   }
 
   // If either stellar mass is zero, mass ratio is undefined.
+  // However, we return zero, just to distinguish from -1.
   if ((mstar_stmax_1 <= 0) || (mstar_stmax_2 <= 0))
-    return -1;
+    return 0;
 
   // Return mass ratio
   return std::min(mstar_stmax_2/mstar_stmax_1, mstar_stmax_1/mstar_stmax_2);
