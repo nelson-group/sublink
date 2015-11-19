@@ -17,6 +17,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>  // setfill, setw, setprecision
+#include <algorithm>  // std::max
 
 #include <algorithm>  // stable_sort, lower_bound
 #ifdef USE_OPENMP
@@ -130,6 +131,35 @@ std::vector<real_type> get_galactocentric_distances(
   return ParticleDistance;
 }
 
+/** @brief Populate @a cur_stars with info from given snapshot,
+ * which acts as a sort of restart file.
+ */
+void read_stars(const std::string& writepath,
+    const snapnum_type snapnum,
+    std::vector<ParticleInfo>& cur_stars) {
+
+  assert(cur_stars.size() == 0);
+
+  // Filename
+  std::stringstream tmp_stream;
+  tmp_stream << writepath << "_" <<
+      std::setfill('0') << std::setw(3) << snapnum << ".hdf5";
+  std::string filename = tmp_stream.str();
+
+  // Read data
+  auto ParticleID = read_dataset<part_id_type>(filename, "ParticleID");
+  auto SubfindIDAtFormation = read_dataset<index_type>(filename, "SubfindIDAtFormation");
+  auto DistanceAtFormation = read_dataset<real_type>(filename, "DistanceAtFormation");
+  auto SnapNumAtFormation = read_dataset<snapnum_type>(filename, "SnapNumAtFormation");
+
+  // Add to cur_stars structure
+  uint64_t nparts = ParticleID.size();
+  cur_stars.reserve(cur_stars.size() + nparts);
+  for (uint64_t i = 0; i < nparts; ++i) {
+    cur_stars.emplace_back(ParticleID[i], SubfindIDAtFormation[i], DistanceAtFormation[i], SnapNumAtFormation[i]);
+  }
+}
+
 /** @brief Update @a cur_stars structure with information from new snapshot.
  *
  * @param[in,out] cur_stars Vector with stellar particle information.
@@ -195,7 +225,7 @@ void update_stars(std::vector<ParticleInfo>& cur_stars,
 /** @brief Carry out stellar assembly calculations. */
 void stellar_assembly(const std::string& basedir, const std::string& treedir,
     const std::string& writepath, const snapnum_type snapnum_first,
-    const snapnum_type snapnum_last) {
+    const snapnum_type snapnum_last, const snapnum_type snapnum_restart) {
 
   // Load merger tree
   WallClock wall_clock;
@@ -210,9 +240,23 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
   // Store (persistent) stellar particle info in this vector.
   std::vector<ParticleInfo> cur_stars;
 
+  // Iterate over snapshots starting with snapnum_start (!= snapnum_first):
+  snapnum_type snapnum_start = snapnum_first;
+
+  // Read restart info if necessary.
+  wall_clock.start();
+  std::cout << "Loading restart info from snapshot " << snapnum_restart << "...\n";
+  if (snapnum_restart >= 0) {
+    read_stars(writepath, snapnum_restart, cur_stars);
+    // Iterate over snapshots starting with snapnum_restart+1
+    snapnum_start = snapnum_restart+1;
+  }
+  std::cout << "Time: " << wall_clock.seconds() << " s.\n";
+  std::cout << "\n";
+
   // Iterate over snapshots
   std::cout << "Iterating over snapshots..." << std::endl;
-  for (auto snapnum = snapnum_first; snapnum <= snapnum_last; ++snapnum) {
+  for (auto snapnum = snapnum_start; snapnum <= snapnum_last; ++snapnum) {
 
     // AD HOC: if L75n1820FP, skip snapshots 53 and 55.
     if (basedir == "/n/hernquistfs1/Illustris/Runs/L75n1820FP/output") {
@@ -382,9 +426,9 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
 int main(int argc, char** argv)
 {
   // Check input arguments
-  if (argc != 6) {
+  if (argc != 7) {
     std::cerr << "Usage: " << argv[0] << " basedir treedir writepath" <<
-        " snapnum_first snapnum_last\n";
+        " snapnum_first snapnum_last snapnum_restart\n";
     exit(1);
   }
 
@@ -394,13 +438,14 @@ int main(int argc, char** argv)
   std::string writepath(argv[3]);
   int16_t snapnum_first = atoi(argv[4]);
   int16_t snapnum_last = atoi(argv[5]);
+  int16_t snapnum_restart = atoi(argv[6]);
 
   // Measure CPU and wall clock (real) time
   WallClock wall_clock;
   CPUClock cpu_clock;
 
   // Do stuff
-  stellar_assembly(basedir, treedir, writepath, snapnum_first, snapnum_last);
+  stellar_assembly(basedir, treedir, writepath, snapnum_first, snapnum_last, snapnum_restart);
 
   // Print wall clock time and speedup
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";
