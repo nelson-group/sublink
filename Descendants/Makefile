@@ -7,6 +7,7 @@
 # Executables to build
 EXEC += find_descendants
 EXEC += compare_descendants
+EXEC += match_subhalos
 
 # Define the C++ compiler to use
 CXX := $(shell which g++) -std=c++11
