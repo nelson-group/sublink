@@ -41,5 +41,5 @@ python ./SubLink/Python/concatenate_trees.py ${TREEDIR}/tree_extended
 
 # Compute offsets
 echo ""; echo "COMPUTING OFFSETS..."
-python ./SubLink/Python/compute_offsets.py $BASEDIR $TREEDIR $SNAPNUM_LAST
+python ./SubLink/Python/compute_offsets.py $BASEDIR $TREEDIR $SNAPNUM_FIRST $SNAPNUM_LAST
 

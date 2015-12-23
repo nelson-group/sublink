@@ -8,7 +8,7 @@ import time
 Compute offsets for 'tree_extended.hdf5'
 """
 
-def compute_offsets(basedir, treedir, snapnum_last):
+def compute_offsets(basedir, treedir, snapnum_first, snapnum_last):
     # Read necessary fields from tree
     start = time.time()
     print 'Reading info from tree...'
@@ -30,12 +30,16 @@ def compute_offsets(basedir, treedir, snapnum_last):
     MainLeafProgenitorID_offsets = []
 
     for snapnum in range(snapnum_last+1):
-        # Get number of subhalos
-        filename = (basedir + '/groups_%s/fof_subhalo_tab_%s.0.hdf5' %
-                    (str(snapnum).zfill(3), str(snapnum).zfill(3)))
-        f = h5py.File(filename, 'r')
-        nsubs = f['Header'].attrs['Nsubgroups_Total']
-        f.close()
+        if snapnum >= snapnum_first:
+            # Get number of subhalos
+            filename = (basedir + '/groups_%s/fof_subhalo_tab_%s.0.hdf5' %
+                        (str(snapnum).zfill(3), str(snapnum).zfill(3)))
+            f = h5py.File(filename, 'r')
+            nsubs = f['Header'].attrs['Nsubgroups_Total']
+            f.close()
+        else:
+            nsubs = 0
+
         # Create arrays
         RowNum_offsets.append(-1*np.ones(nsubs, dtype=np.int64))
         SubhaloID_offsets.append(-1*np.ones(nsubs, dtype=np.int64))
@@ -53,6 +57,7 @@ def compute_offsets(basedir, treedir, snapnum_last):
 
     print 'Time: %f' % (time.time() - start)
 
+    # Write to files
     start = time.time()
     print 'Writing to files...'
 
@@ -61,7 +66,7 @@ def compute_offsets(basedir, treedir, snapnum_last):
     if not os.path.exists(dir_offsets):
         os.popen('mkdir -p ' + dir_offsets)
 
-    for snapnum in range(snapnum_last+1):
+    for snapnum in range(snapnum_first, snapnum_last+1):
         filename_offsets = '%s/offsets_%s.hdf5' % (dir_offsets, str(snapnum).zfill(3))
         f_offsets = h5py.File(filename_offsets, 'w')
         f_offsets.create_dataset("RowNum", data=RowNum_offsets[snapnum])
@@ -78,9 +83,10 @@ if __name__ == '__main__':
     try:
         basedir = sys.argv[1]
         treedir = sys.argv[2]
-        snapnum_last = int(sys.argv[3])
+        snapnum_first = int(sys.argv[3])
+        snapnum_last = int(sys.argv[4])
     except:
-        print 'Arguments: basedir treedir snapnum_last'
+        print 'Arguments: basedir treedir snapnum_first snapnum_last'
         sys.exit()
 
-    compute_offsets(basedir, treedir, snapnum_last)
+    compute_offsets(basedir, treedir, snapnum_first, snapnum_last)
