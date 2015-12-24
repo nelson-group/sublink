@@ -100,8 +100,8 @@ void compare_descendants(const snapnum_type snapnum1,
   // Read info from other files
   auto desc_index_13 = read_dataset<index_type>(filename_13, "DescendantIndex");
   auto desc_index_23 = read_dataset<index_type>(filename_23, "DescendantIndex");
-  auto first_score_13 = read_dataset<index_type>(filename_13, "FirstScore");
-  auto second_score_13 = read_dataset<index_type>(filename_13, "SecondScore");
+  auto first_score_13 = read_dataset<real_type>(filename_13, "FirstScore");
+  auto second_score_13 = read_dataset<real_type>(filename_13, "SecondScore");
 
   // Initialize descendants and scores to the ones from snapshot 2
   auto desc_final = desc_index_12;
@@ -110,10 +110,10 @@ void compare_descendants(const snapnum_type snapnum1,
 
   // Compare descendants
   for (uint32_t sub_index = 0; sub_index < nsubs; ++sub_index) {
-    index_type desc_immediate = desc_index_12[sub_index];
-    index_type desc_skip = desc_index_13[sub_index];
-    real_type first_score_skip = first_score_13[sub_index];
-    real_type second_score_skip = second_score_13[sub_index];
+    auto desc_immediate = desc_index_12[sub_index];
+    auto desc_skip = desc_index_13[sub_index];
+    auto first_score_skip = first_score_13[sub_index];
+    auto second_score_skip = second_score_13[sub_index];
 
     if (desc_skip == -1)
       continue;
@@ -126,7 +126,7 @@ void compare_descendants(const snapnum_type snapnum1,
       continue;
     }
 
-    index_type desc_straight = desc_index_23[desc_immediate];
+    auto desc_straight = desc_index_23[desc_immediate];
     if (desc_straight != desc_skip) {
       desc_final[sub_index] = desc_skip;
       first_score_final[sub_index] = first_score_skip;
