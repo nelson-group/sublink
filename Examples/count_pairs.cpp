@@ -58,6 +58,136 @@ typedef typename AllGalaxiesType::galaxy_type Galaxy;
 // Define spatial searcher type
 typedef SpaceSearcher<Galaxy, GalaxyToPoint> SpaceSearcherType;
 
+/** Datatype to store all the pair data. */
+struct PairData {
+  // General
+  std::vector<real_type> proj_sep;  // Projected separation (kpc/h, comoving)
+  std::vector<real_type> los_sep;  // Line-of-sight separation (kpc/h, comoving)
+  std::vector<real_type> vel_diff;  // Line-of-sight velocity difference (km/s, physical)
+
+  // Properties of descendant (if any; otherwise all -1)
+  std::vector<real_type> mstar_0;
+  std::vector<real_type> sfr_0;
+  std::vector<real_type> delta_0;
+  std::vector<index_type> index_0;
+  std::vector<snapnum_type> snapnum_merger;
+
+  // "Instantaneous" properties of pair
+  std::vector<real_type> mstar_instant_1;
+  std::vector<real_type> sfr_instant_1;
+  std::vector<real_type> delta_instant_1;
+  std::vector<index_type> index_instant_1;
+  std::vector<real_type> mstar_instant_2;
+  std::vector<real_type> sfr_instant_2;
+  std::vector<real_type> delta_instant_2;
+  std::vector<index_type> index_instant_2;
+  // Skip snapnum_instant because it's given in the filename.
+
+  // Properties at stellar tmax
+  std::vector<real_type> mstar_stmax_1;
+  std::vector<real_type> sfr_stmax_1;
+  std::vector<real_type> delta_stmax_1;
+  std::vector<index_type> index_stmax_1;
+  std::vector<real_type> mstar_stmax_2;
+  std::vector<real_type> sfr_stmax_2;
+  std::vector<real_type> delta_stmax_2;
+  std::vector<index_type> index_stmax_2;
+  std::vector<snapnum_type> snapnum_stmax;
+
+  // Properties at infall
+  std::vector<real_type> mstar_infall_1;
+  std::vector<real_type> sfr_infall_1;
+  std::vector<real_type> delta_infall_1;
+  std::vector<index_type> index_infall_1;
+  std::vector<real_type> mstar_infall_2;
+  std::vector<real_type> sfr_infall_2;
+  std::vector<real_type> delta_infall_2;
+  std::vector<index_type> index_infall_2;
+  std::vector<snapnum_type> snapnum_infall;
+
+  /** Add a new galaxy pair to this structure. */
+  void add_pair(
+      real_type proj_sep_,
+      real_type los_sep_,
+      real_type vel_diff_,
+
+      real_type mstar_0_,
+      real_type sfr_0_,
+      real_type delta_0_,
+      index_type index_0_,
+      snapnum_type snapnum_merger_,
+
+      real_type mstar_instant_1_,
+      real_type sfr_instant_1_,
+      real_type delta_instant_1_,
+      index_type index_instant_1_,
+      real_type mstar_instant_2_,
+      real_type sfr_instant_2_,
+      real_type delta_instant_2_,
+      index_type index_instant_2_,
+
+      real_type mstar_stmax_1_,
+      real_type sfr_stmax_1_,
+      real_type delta_stmax_1_,
+      index_type index_stmax_1_,
+      real_type mstar_stmax_2_,
+      real_type sfr_stmax_2_,
+      real_type delta_stmax_2_,
+      index_type index_stmax_2_,
+      snapnum_type snapnum_stmax_,
+
+      real_type mstar_infall_1_,
+      real_type sfr_infall_1_,
+      real_type delta_infall_1_,
+      index_type index_infall_1_,
+      real_type mstar_infall_2_,
+      real_type sfr_infall_2_,
+      real_type delta_infall_2_,
+      index_type index_infall_2_,
+      snapnum_type snapnum_infall_) {
+
+    proj_sep.push_back(proj_sep_);
+    los_sep.push_back(los_sep_);
+    vel_diff.push_back(vel_diff_);
+
+    mstar_0.push_back(mstar_0_);
+    sfr_0.push_back(sfr_0_);
+    delta_0.push_back(delta_0_);
+    index_0.push_back(index_0_);
+    snapnum_merger.push_back(snapnum_merger_);
+
+    mstar_instant_1.push_back(mstar_instant_1_);
+    sfr_instant_1.push_back(sfr_instant_1_);
+    delta_instant_1.push_back(delta_instant_1_);
+    index_instant_1.push_back(index_instant_1_);
+    mstar_instant_2.push_back(mstar_instant_2_);
+    sfr_instant_2.push_back(sfr_instant_2_);
+    delta_instant_2.push_back(delta_instant_2_);
+    index_instant_2.push_back(index_instant_2_);
+
+    mstar_stmax_1.push_back(mstar_stmax_1_);
+    sfr_stmax_1.push_back(sfr_stmax_1_);
+    delta_stmax_1.push_back(delta_stmax_1_);
+    index_stmax_1.push_back(index_stmax_1_);
+    mstar_stmax_2.push_back(mstar_stmax_2_);
+    sfr_stmax_2.push_back(sfr_stmax_2_);
+    delta_stmax_2.push_back(delta_stmax_2_);
+    index_stmax_2.push_back(index_stmax_2_);
+    snapnum_stmax.push_back(snapnum_stmax_);
+
+    mstar_infall_1.push_back(mstar_infall_1_);
+    sfr_infall_1.push_back(sfr_infall_1_);
+    delta_infall_1.push_back(delta_infall_1_);
+    index_infall_1.push_back(index_infall_1_);
+    mstar_infall_2.push_back(mstar_infall_2_);
+    sfr_infall_2.push_back(sfr_infall_2_);
+    delta_infall_2.push_back(delta_infall_2_);
+    index_infall_2.push_back(index_infall_2_);
+    snapnum_infall.push_back(snapnum_infall_);
+  }
+  // Automatically generated default constructor should be OK.
+};
+
 /** @brief Return projected separation between @a pos1 and @a pos2. */
 real_type get_projected_separation(const Point pos1, const Point pos2) {
   auto dr = Point(pos2[0] - pos1[0], pos2[1] - pos1[1], 0);
@@ -83,12 +213,12 @@ real_type get_velocity_difference(const Point center_pos, const Point center_vel
 /** Return a vector with Galaxies within an annulus centered on @a center_pos
  * with radii (in cylindrical coordinates) between rmin and rmax. */
 std::vector<Galaxy> annulus_query(const SpaceSearcherType& s,
-    const Point center_pos, const real_type rmin, const real_type rmax) {
+    const Point center_pos, const real_type rmin_comoving, const real_type rmax_comoving) {
 
-  // Find points inside this bounding box
+  // Retrieve points inside this bounding box
   Point center_pos_2d = Point(center_pos[0], center_pos[1], 0.0);
-  BoundingBox bb(center_pos_2d - Point(rmax,rmax,1.0),
-                 center_pos_2d + Point(rmax,rmax,1.0));
+  BoundingBox bb(center_pos_2d - Point(rmax_comoving,rmax_comoving,1.0),
+                 center_pos_2d + Point(rmax_comoving,rmax_comoving,1.0));
 
   // Iterate over points in bounding box using SpaceSearcher
   // and keep the ones that are inside the region of interest.
@@ -97,7 +227,7 @@ std::vector<Galaxy> annulus_query(const SpaceSearcherType& s,
     auto cur_gal = *it;
     auto cur_pos = cur_gal.position();
     auto cur_separation = get_projected_separation(center_pos, cur_pos);
-    if ((cur_separation > rmin) && (cur_separation < rmax)) {
+    if ((cur_separation > rmin_comoving) && (cur_separation < rmax_comoving)) {
       annulus_gals.push_back(cur_gal);
     }
   }
@@ -158,7 +288,7 @@ void count_pairs_sub(const SpaceSearcherType& s,
     const real_type velocity_threshold, const real_type mstar_min,
     const real_type cur_H_kpc_h, const real_type cur_z,
     const std::vector<std::vector<real_type>>& overdensities,
-    std::ofstream& writefile) {
+    PairData& pd) {
 
   assert(center_sub.is_valid());
 
@@ -166,121 +296,128 @@ void count_pairs_sub(const SpaceSearcherType& s,
   if (center_sub.data().SubhaloMassType[parttype_stars] < mstar_min)
     return;
 
-  // Iterate over neighbors
+  // Iterate over neighbors (of any mass)
   auto neighbors = annulus_query(s, center_pos, rmin_comoving, rmax_comoving);
   for (auto it = neighbors.begin(); it != neighbors.end(); ++it) {
     auto other_gal = *it;  // "spatial" object
 
-    // Just in case
+    // Just in case (I think I can remove this check)
     if (center_sub.index() == other_gal.value().subfind_id) {
       std::cout << "Skipping repeated galaxy...\n";
       continue;
     }
 
-    // Only proceed if (physical) velocity difference is less than threshold
+    // ------------------ CHECK IF VALID CLOSE PAIR -------------------
+
+    // Only proceed if (physical) velocity difference is less than threshold *OR*
+    // if line-of-sight separation is less than rmax_comoving
+    real_type los_sep = other_gal.position()[2] - center_pos[2];
     real_type vel_diff = get_velocity_difference(center_pos, center_vel,
         other_gal.position(), other_gal.value().velocity, cur_H_kpc_h, cur_z);
-    if (std::abs(vel_diff) > velocity_threshold)
+    if ((std::abs(vel_diff) > velocity_threshold) &&
+        (std::abs(los_sep) > rmax_comoving))
       continue;
 
-    // If we got here, we have found a close pair.
+    // If we got here, we have found a close pair (either by the vel_diff or
+    // los_sep criterion).
     auto other_sub = tree.subhalo(snapnum, other_gal.value().subfind_id);
     assert(other_sub.is_valid());
 
-    // Avoid double counting by making sure that the primary is more massive
-    if (center_sub.data().SubhaloMassType[parttype_stars] <=
-        other_sub.data().SubhaloMassType[parttype_stars])
+    // Avoid double counting by making sure that mstar_1 > mstar_2
+    // (check merger mass ratio later, e.g. when plotting).
+    real_type mstar_instant_1 = center_sub.data().SubhaloMassType[parttype_stars];
+    real_type mstar_instant_2 = other_sub.data().SubhaloMassType[parttype_stars];
+    if (mstar_instant_1 <= mstar_instant_2)
       continue;
 
-    // Print properties of close pair
-    writefile << std::setprecision(10) <<
-        get_projected_separation(center_pos, other_gal.position()) << "," <<
-        other_gal.position()[2] - center_pos[2] << "," <<
-        vel_diff << ",";
+    // ----------------- GET PROPERTIES OF CLOSE PAIR -------------------
 
-    // Print properties of descendant (if any)
+    // General properties of close pair
+    real_type proj_sep = get_projected_separation(center_pos, other_gal.position());
+    // already have los_sep
+    // already have vel_diff
+
+    // Properties of descendant (if any)
     real_type mstar_0 = -1;
     real_type sfr_0 = -1;
-    real_type overdensity_0 = -1;
+    real_type delta_0 = -1;
+    index_type index_0 = -1;
     snapnum_type snapnum_merger = -1;
     auto desc = get_merger_remnant(center_sub, other_sub);
     if (desc.is_valid()) {
       mstar_0 = desc.data().SubhaloMassType[parttype_stars];
       sfr_0 = desc.data().SubhaloSFR;
-      overdensity_0 = overdensities[desc.snapnum()][desc.index()];
+      delta_0 = overdensities[desc.snapnum()][desc.index()];
+      index_0 = desc.index();
       snapnum_merger = desc.snapnum();
     }
-    writefile << std::setprecision(10) <<
-        mstar_0 << "," <<
-        sfr_0 << "," <<
-        overdensity_0 << "," <<
-        snapnum_merger << ",";
 
-    // Properties at current time
-    writefile << std::setprecision(10) <<
-        center_sub.data().SubhaloMassType[parttype_stars] << "," <<
-        center_sub.data().SubhaloSFR << "," <<
-        overdensities[center_sub.snapnum()][center_sub.index()] << "," <<
-        other_sub.data().SubhaloMassType[parttype_stars] << "," <<
-        other_sub.data().SubhaloSFR << "," <<
-        overdensities[other_sub.snapnum()][other_sub.index()] << ",";
+    // Pair properties at current time
+    // already have mstar_instant_1
+    real_type sfr_instant_1 = center_sub.data().SubhaloSFR;
+    real_type delta_instant_1 = overdensities[center_sub.snapnum()][center_sub.index()];
+    index_type index_instant_1 = center_sub.index();
+    // already have mstar_instant_2
+    real_type sfr_instant_2 = other_sub.data().SubhaloSFR;
+    real_type delta_instant_2 = overdensities[other_sub.snapnum()][other_sub.index()];
+    index_type index_instant_2 = other_sub.index();
 
     // Properties at (stellar) tmax
     real_type mstar_stmax_1 = -1;
     real_type sfr_stmax_1 = -1;
-    real_type overdensity_stmax_1 = -1;
+    real_type delta_stmax_1 = -1;
+    index_type index_stmax_1 = -1;
     real_type mstar_stmax_2 = -1;
     real_type sfr_stmax_2 = -1;
-    real_type overdensity_stmax_2 = -1;
+    real_type delta_stmax_2 = -1;
+    index_type index_stmax_2 = -1;
     snapnum_type snapnum_stmax = -1;
     auto stmax_pair = get_stmax_pair(center_sub, other_sub);
     if (stmax_pair.first.is_valid()) {
       mstar_stmax_1 = stmax_pair.first.data().SubhaloMassType[parttype_stars];
       sfr_stmax_1 = stmax_pair.first.data().SubhaloSFR;
-      overdensity_stmax_1 = overdensities[stmax_pair.first.data().SnapNum][stmax_pair.first.data().SubfindID];
+      delta_stmax_1 = overdensities[stmax_pair.first.data().SnapNum][stmax_pair.first.index()];
+      index_stmax_1 = stmax_pair.first.index();
       mstar_stmax_2 = stmax_pair.second.data().SubhaloMassType[parttype_stars];
       sfr_stmax_2 = stmax_pair.second.data().SubhaloSFR;
-      overdensity_stmax_2 = overdensities[stmax_pair.second.data().SnapNum][stmax_pair.second.data().SubfindID];
+      delta_stmax_2 = overdensities[stmax_pair.second.data().SnapNum][stmax_pair.second.index()];
+      index_stmax_2 = stmax_pair.second.index();
       snapnum_stmax = stmax_pair.second.data().SnapNum;
     }
-    writefile << std::setprecision(10) <<
-        mstar_stmax_1 << "," <<
-        sfr_stmax_1 << "," <<
-        overdensity_stmax_1 << "," <<
-        mstar_stmax_2 << "," <<
-        sfr_stmax_2 << "," <<
-        overdensity_stmax_2 << "," <<
-        snapnum_stmax << ",";
 
     // Properties at infall
     real_type mstar_infall_1 = -1;
     real_type sfr_infall_1 = -1;
-    real_type overdensity_infall_1 = -1;
+    real_type delta_infall_1 = -1;
+    index_type index_infall_1 = -1;
     real_type mstar_infall_2 = -1;
     real_type sfr_infall_2 = -1;
-    real_type overdensity_infall_2 = -1;
+    real_type delta_infall_2 = -1;
+    index_type index_infall_2 = -1;
     snapnum_type snapnum_infall = -1;
     auto infall_pair = get_infall_pair(center_sub, other_sub);
     if (infall_pair.first.is_valid()) {
       mstar_infall_1 = infall_pair.first.data().SubhaloMassType[parttype_stars];
       sfr_infall_1 = infall_pair.first.data().SubhaloSFR;
-      overdensity_infall_1 = overdensities[infall_pair.first.data().SnapNum][infall_pair.first.data().SubfindID];
+      delta_infall_1 = overdensities[infall_pair.first.data().SnapNum][infall_pair.first.index()];
+      index_infall_1 = infall_pair.first.index();
       mstar_infall_2 = infall_pair.second.data().SubhaloMassType[parttype_stars];
       sfr_infall_2 = infall_pair.second.data().SubhaloSFR;
-      overdensity_infall_2 = overdensities[infall_pair.second.data().SnapNum][infall_pair.second.data().SubfindID];
+      delta_infall_2 = overdensities[infall_pair.second.data().SnapNum][infall_pair.second.data().SubfindID];
+      index_infall_2 = infall_pair.second.index();
       snapnum_infall = infall_pair.second.data().SnapNum;
     }
-    writefile << std::setprecision(10) <<
-        mstar_infall_1 << "," <<
-        sfr_infall_1 << "," <<
-        overdensity_infall_1 << "," <<
-        mstar_infall_2 << "," <<
-        sfr_infall_2 << "," <<
-        overdensity_infall_2 << "," <<
-        snapnum_infall << "\n";
+
+    // Store pair info in data structure
+    pd.add_pair(proj_sep, los_sep, vel_diff, mstar_0, sfr_0, delta_0, index_0,
+        snapnum_merger, mstar_instant_1, sfr_instant_1, delta_instant_1, index_instant_1,
+        mstar_instant_2, sfr_instant_2, delta_instant_2, index_instant_2, mstar_stmax_1,
+        sfr_stmax_1, delta_stmax_1, index_stmax_1, mstar_stmax_2, sfr_stmax_2,
+        delta_stmax_2, index_stmax_2, snapnum_stmax, mstar_infall_1, sfr_infall_1,
+        delta_infall_1, index_infall_1, mstar_infall_2, sfr_infall_2, delta_infall_2,
+        index_infall_2, snapnum_infall);
   }
 }
-
 
 /** @brief Count close pairs and print to files. */
 void count_pairs_all(const std::string& simdir, const std::string& treedir,
@@ -289,7 +426,7 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
     const real_type rmin, const real_type rmax,
     const real_type velocity_threshold, const real_type log_mstar_min) {
 
-  // Convert mass to 10^10 Msun/h:
+  // Convert minimum mass to 10^10 Msun/h:
   float mstar_min = cosmo::h * std::pow(10.0, log_mstar_min - 10.0);
 
   // Get box size in ckpc/h; note conversion to float
@@ -335,15 +472,11 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
     // Filename for this snapshot.
     std::stringstream tmp_stream;
     tmp_stream << writepath << "_" <<
-        std::setfill('0') << std::setw(3) << snapnum;
+        std::setfill('0') << std::setw(3) << snapnum << ".hdf5";
     std::string writefilename = tmp_stream.str();
 
-    // Open file and make sure it's open.
-    std::ofstream writefile(writefilename.data());
-    if (!writefile.is_open()) {
-      std::cerr << "Error: Unable to open file " << writefilename << '\n';
-      continue;
-    }
+    // Open output HDF5 file
+    H5::H5File writefile(writefilename, H5F_ACC_TRUNC);
 
     // Load galaxy positions and stellar masses.
     std::cout << "Loading galaxy data...\n";
@@ -359,6 +492,7 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
     uint32_t nsubs = sub_pos.size();
     if (nsubs == 0) {
       std::cout << "Skipping empty snapshot: " << snapnum << ".\n";
+      writefile.close();
       continue;
     }
 
@@ -402,6 +536,10 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
     SpaceSearcherType s(ag.begin(), ag.end(), GalaxyToPoint());
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
+    // Create a structure for storing pair data.
+    auto pd = PairData();
+    assert(pd.proj_sep.size() == 0);  // just to check
+
     // Iterate over real (non-ghost) galaxies and count pairs
     std::cout << "Iterating over galaxies...\n";
     wall_clock.start();
@@ -411,13 +549,53 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
       auto center_vel = sub_vel[center_sub.index()];
       count_pairs_sub(s, tree, snapnum, center_sub, center_pos, center_vel,
           rmin_comoving, rmax_comoving, velocity_threshold, mstar_min,
-          cur_H_kpc_h, cur_z, overdensities, writefile);
+          cur_H_kpc_h, cur_z, overdensities, pd);
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
-    // Flush and close file
-    writefile.flush();
+    // Write to HDF5 file.
+    add_array(writefile, pd.proj_sep, "proj_sep", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.los_sep, "los_sep", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.vel_diff, "vel_diff", H5::PredType::NATIVE_FLOAT);
+
+    add_array(writefile, pd.mstar_0, "mstar_0", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.sfr_0, "sfr_0", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.delta_0, "delta_0", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.index_0, "index_0", H5::PredType::NATIVE_INT32);
+    add_array(writefile, pd.snapnum_merger, "snapnum_merger", H5::PredType::NATIVE_INT16);
+
+    add_array(writefile, pd.mstar_instant_1, "mstar_instant_1", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.sfr_instant_1, "sfr_instant_1", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.delta_instant_1, "delta_instant_1", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.index_instant_1, "index_instant_1", H5::PredType::NATIVE_INT32);
+    add_array(writefile, pd.mstar_instant_2, "mstar_instant_2", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.sfr_instant_2, "sfr_instant_2", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.delta_instant_2, "delta_instant_2", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.index_instant_2, "index_instant_2", H5::PredType::NATIVE_INT32);
+
+    add_array(writefile, pd.mstar_stmax_1, "mstar_stmax_1", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.sfr_stmax_1, "sfr_stmax_1", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.delta_stmax_1, "delta_stmax_1", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.index_stmax_1, "index_stmax_1", H5::PredType::NATIVE_INT32);
+    add_array(writefile, pd.mstar_stmax_2, "mstar_stmax_2", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.sfr_stmax_2, "sfr_stmax_2", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.delta_stmax_2, "delta_stmax_2", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.index_stmax_2, "index_stmax_2", H5::PredType::NATIVE_INT32);
+    add_array(writefile, pd.snapnum_stmax, "snapnum_stmax", H5::PredType::NATIVE_INT16);
+
+    add_array(writefile, pd.mstar_infall_1, "mstar_infall_1", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.sfr_infall_1, "sfr_infall_1", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.delta_infall_1, "delta_infall_1", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.index_infall_1, "index_infall_1", H5::PredType::NATIVE_INT32);
+    add_array(writefile, pd.mstar_infall_2, "mstar_infall_2", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.sfr_infall_2, "sfr_infall_2", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.delta_infall_2, "delta_infall_2", H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, pd.index_infall_2, "index_infall_2", H5::PredType::NATIVE_INT32);
+    add_array(writefile, pd.snapnum_infall, "snapnum_infall", H5::PredType::NATIVE_INT16);
+
+    // Close (and flush) file
     writefile.close();
+
     std::cout << "Finished for snapshot " << snapnum << ".\n\n";
   }
 }
