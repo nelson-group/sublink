@@ -56,6 +56,12 @@ void merger_history_sub(Subhalo sub,
   // Sum of the stellar masses of all secondary progenitors:
   real_type denominator = 0;
 
+  // Initialize mean quantities to zero:
+  md.MeanMassRatio[sub_orig.index()] = 0;
+  md.MeanRedshift[sub_orig.index()] = 0;
+  md.MeanLookbackTime[sub_orig.index()] = 0;
+  md.MeanGasFraction[sub_orig.index()] = 0;
+
   // Iterate over first progenitor
   auto first_prog = sub_orig.first_progenitor();
   while (first_prog.is_valid()) {
@@ -87,16 +93,23 @@ void merger_history_sub(Subhalo sub,
         continue;
       }
 
-      // Fraction of star-forming gas
+      // Make sure that mass ratio < 1:
+      real_type mass_ratio = std::min(mstar_stmax_2/mstar_stmax_1,
+          mstar_stmax_1/mstar_stmax_2);
+
+      // "Weights" also correspond to the smallest of the two masses:
+      real_type smallest_mstar = std::min(mstar_stmax_1, mstar_stmax_2);
+
+      // Gas fraction is an "intensive" quantity: should always take the secondary
       real_type mgal_stmax_2 = stmax_pair.second.data().Mass;
       real_type fgas_stmax_2 = (mgal_stmax_2 - mstar_stmax_2) / mgal_stmax_2;
 
       // Add contributions
-      md.MeanMassRatio[sub_orig.index()] += mstar_stmax_2 * (mstar_stmax_2 / mstar_stmax_1);
-      md.MeanRedshift[sub_orig.index()] += mstar_stmax_2 * redshifts_all[sub.snapnum()];
-      md.MeanLookbackTime[sub_orig.index()] += mstar_stmax_2 * (times_all[sub_orig.snapnum()] - times_all[sub.snapnum()]);
-      md.MeanGasFraction[sub_orig.index()] += mstar_stmax_2 * fgas_stmax_2;
-      denominator += mstar_stmax_2;
+      md.MeanMassRatio[sub_orig.index()] += smallest_mstar * mass_ratio;
+      md.MeanRedshift[sub_orig.index()] += smallest_mstar * redshifts_all[sub.snapnum()];
+      md.MeanLookbackTime[sub_orig.index()] += smallest_mstar * (times_all[sub_orig.snapnum()] - times_all[sub.snapnum()]);
+      md.MeanGasFraction[sub_orig.index()] += smallest_mstar * fgas_stmax_2;
+      denominator += smallest_mstar;
     }
 
     // Next iteration
@@ -105,10 +118,19 @@ void merger_history_sub(Subhalo sub,
   }
 
   // Divide by denominator to get an average:
-  md.MeanMassRatio[sub_orig.index()] /= denominator;
-  md.MeanRedshift[sub_orig.index()] /= denominator;
-  md.MeanLookbackTime[sub_orig.index()] /= denominator;
-  md.MeanGasFraction[sub_orig.index()] /= denominator;
+  if (denominator > 0) {
+    md.MeanMassRatio[sub_orig.index()] /= denominator;
+    md.MeanRedshift[sub_orig.index()] /= denominator;
+    md.MeanLookbackTime[sub_orig.index()] /= denominator;
+    md.MeanGasFraction[sub_orig.index()] /= denominator;
+  }
+  else {  // quantities are undefined
+    md.MeanMassRatio[sub_orig.index()] = -1;
+    md.MeanRedshift[sub_orig.index()] = -1;
+    md.MeanLookbackTime[sub_orig.index()] = -1;
+    md.MeanGasFraction[sub_orig.index()] = -1;
+
+  }
 }
 
 /** @brief Get snapshot of last major (minor) merger. */
