@@ -9,6 +9,7 @@ EXEC += stellar_assembly
 EXEC += count_mergers
 EXEC += count_pairs
 EXEC += merger_history
+EXEC += merger_history_bonus
 EXEC += infall_catalog
 EXEC += tree_test
 EXEC += custom_1
