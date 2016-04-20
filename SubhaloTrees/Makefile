@@ -26,7 +26,7 @@ INCLUDES += -I. -I..
 CXXFLAGS += -O3 -funroll-loops -W -Wall -Wextra #-Wfatal-errors
 
 # Use HDF5
-CXXFLAGS += -lhdf5_cpp -lhdf5 
+CXXFLAGS += -lhdf5_cpp -lhdf5 -DOMPI_SKIP_MPICXX=1 
 
 ## Parallel sort
 #CXXFLAGS += -fopenmp -DUSE_OPENMP
