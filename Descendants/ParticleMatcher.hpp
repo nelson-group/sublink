@@ -372,6 +372,8 @@ private:
     std::vector<std::vector<Candidate>> scores(snap1_->nsubs());
     for (auto data_it = data_.begin(); data_it+1 < data_.end(); ++data_it) {
 
+      assert(data_it->id != 0);
+
       // Only care about repeated IDs
       if (data_it->id != (data_it+1)->id)
         continue;

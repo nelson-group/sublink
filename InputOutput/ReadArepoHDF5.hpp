@@ -149,6 +149,12 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   auto group = new H5::Group(file->openGroup(parttype_str));
   auto dataset = new H5::DataSet(group->openDataSet(block_name));
 
+  // Check that type sizes match (necessary but not sufficient).
+  auto dt = dataset->getDataType();
+  if( dt.getSize() != sizeof(T) )
+    std::cout << " ERROR: Highly probable mismatched LONGIDS and TreeTypes.hpp/part_id_type." << std::endl;
+  assert(dt.getSize() == sizeof(T));
+
   // Get dimensions of the dataset
   H5::DataSpace file_space = dataset->getSpace();
   const unsigned int rank = file_space.getSimpleExtentNdims();

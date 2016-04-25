@@ -5,7 +5,7 @@
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
 
-/** @brief Type of particle IDs. */
+/** @brief Type of particle IDs. MUST BE uint32_t for non-LONGIDS runs. */
 typedef uint64_t part_id_type;
 /** @brief Type of subhalo IDs in the merger trees. */
 typedef int64_t sub_id_type;
