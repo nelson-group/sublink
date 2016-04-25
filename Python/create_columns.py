@@ -38,7 +38,7 @@ def read_block(basedir, snapnum, field_name, group_name):
             else:
                 # Note that nfiles is only defined for filenum > 0
                 filenum += 1
-                if filenum == nfiles:
+                if filenum >= nfiles:
                     doneflag = True
                 continue
 
@@ -174,12 +174,12 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
         for snapnum in range(snapnum_first, snapnum_last+1):
             # Note that some snapshots may be empty:
             retval = read_block(basedir, snapnum, field_name, group_name)
-            if retval != None:
+            if retval is not None:
                 data_catalog[snapnum] = retval
 
             if group_name == 'Group':
                 retval = read_block(basedir, snapnum, "SubhaloGrNr", "Subhalo")
-                if retval != None:
+                if retval is not None:
                     sub_gr_nr[snapnum] = retval
 
         # Create write folder if necessary
