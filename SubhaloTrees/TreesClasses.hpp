@@ -667,7 +667,7 @@ private:
       // Check if this is the last tree that goes into the current file.
       nsubs_in_cur_file += cur_tree->subhalos.size();
       if (nsubs_in_cur_file + cur_tree->subhalos.size() >= max_nsubs_per_file || 
-          filenum == 0 && tree_index == ntrees-1) {
+          (filenum == 0 && tree_index == ntrees-1) ) {
         last_tree_in_file.push_back(tree_index);
         nsubs_per_file.push_back(nsubs_in_cur_file);
         nsubs_in_cur_file = 0;
