@@ -637,8 +637,10 @@ private:
 
     // Size of first tree determines approximate file size.
     // We make sure that no tree file is larger than the first one.
-    // (alternatively, set max_nsubs_per_file to desired value)
-    uint64_t max_nsubs_per_file = trees_.front()->subhalos.size();
+    // (alternatively, set max_nsubs_per_file to desired value, or 
+    // increase 1 to e.g. 5 or 10 to proportionally lower the number 
+    // of output file chunks written)
+    uint64_t max_nsubs_per_file = trees_.front()->subhalos.size() * 1;
 
     // Assign tree and subhalo IDs and determine which are the first
     // and last trees that go into each file.
@@ -664,7 +666,8 @@ private:
       ++tree_count;
       // Check if this is the last tree that goes into the current file.
       nsubs_in_cur_file += cur_tree->subhalos.size();
-      if (nsubs_in_cur_file + cur_tree->subhalos.size() >= max_nsubs_per_file) {
+      if (nsubs_in_cur_file + cur_tree->subhalos.size() >= max_nsubs_per_file || 
+          filenum == 0 && tree_index == ntrees-1) {
         last_tree_in_file.push_back(tree_index);
         nsubs_per_file.push_back(nsubs_in_cur_file);
         nsubs_in_cur_file = 0;

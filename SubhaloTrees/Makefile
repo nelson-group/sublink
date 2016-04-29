@@ -32,7 +32,7 @@ CXXFLAGS += -lhdf5_cpp -lhdf5 -DOMPI_SKIP_MPICXX=1
 #CXXFLAGS += -fopenmp -DUSE_OPENMP
 
 ## Profiling
-#CXXFLAGS += -g -pg
+CXXFLAGS += -g #-pg
 
 # Define any directories containing libraries
 #   To include directories use -Lpath/to/files
