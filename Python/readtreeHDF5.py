@@ -5,7 +5,7 @@ import os
 
 """
 Simple Python script for reading merger tree HDF5 files
-in "database mode," which is optimized for extracting
+in "database mode, " which is optimized for extracting
 quantities along the main branch of a subhalo.
 
 For convenience, there are some built-in functions to do
@@ -30,11 +30,12 @@ treedir = '/n/ghernquist/vrodrigu/MergerTrees/output/Subhalos/Illustris/L75n1820
 tree = readtreeHDF5.TreeDB(treedir)
 snapnum = 135; subfind_id = 0
 branch = tree.get_main_branch(snapnum, subfind_id, keysel=['SubhaloMassType'])
-print branch.SubhaloMassType[:, 4]
+print(branch.SubhaloMassType[:, 4])
 
 -------------------------------------------------------------------------
 
 """
+
 
 class _Subset(object):
     """
@@ -46,9 +47,10 @@ class _Subset(object):
         for field_name in adj_rows._fields:
             setattr(self, field_name, getattr(adj_rows, field_name)[indices])
 
+
 class _AdjacentRows(object):
     """
-    Used by the TreeDB class. Consists of 
+    Used by the TreeDB class. Consists of
     a set of adjacent rows from the merger tree file.
     Since subhalo IDs are assigned in a depth-first fashion,
     a "chunk" of adjacent rows can represent, e.g., a main branch
@@ -61,7 +63,7 @@ class _AdjacentRows(object):
         # Public attributes
         self._row_start = row_start
         self._row_end = row_end
-        if row_original == None:
+        if row_original is None:
             self._index_given_sub = 0
         else:
             self._index_given_sub = row_original - row_start
@@ -71,11 +73,11 @@ class _AdjacentRows(object):
         locs = slice(row_start, row_end+1)
 
         # Find out which fields to add
-        if keysel == None:
+        if keysel is None:
             self._fields = treefile.keys()
         else:
             self._fields = keysel
-        
+
         # Add them
         for field_name in self._fields:
             setattr(self, field_name, treefile[field_name][locs])
@@ -83,25 +85,26 @@ class _AdjacentRows(object):
     def _get_subset(self, indices):
         return _Subset(self, indices)
 
+
 class TreeDB:
     """
     Python class to extract information from merger tree files
     in "database mode."
-    
+
     --------------- USAGE EXAMPLE: PRINT STELLAR MASS HISTORY ---------------
     import readtreeHDF5
     treedir = '/n/ghernquist/vrodrigu/MergerTrees/output/Subhalos/Illustris/L75n1820FP'
     tree = readtreeHDF5.TreeDB(treedir)
     snapnum = 135; subfind_id = 0
     branch = tree.get_main_branch(snapnum, subfind_id, keysel=['SubhaloMassType'])
-    print branch.SubhaloMassType[:, 4]
+    print(branch.SubhaloMassType[:, 4])
     -----------------------------------------------------------------------
     """
 
     def __init__(self, treedir, name='tree_extended', filenum=-1):
         """
         Create a TreeDB object.
-        
+
         Parameters
         ----------
         treedir : string
@@ -116,10 +119,10 @@ class TreeDB:
         # Check that a few files/paths exist
         for rel_path in ['tree_extended.hdf5', 'offsets']:
             if not os.path.exists(treedir + '/' + rel_path):
-                print 'Path not found: ' + treedir + '/' + rel_path
+                print('Path not found: ' + treedir + '/' + rel_path)
                 sys.exit()
         if filenum != -1:
-            print 'Currently no support for individual tree files.'
+            print('Currently no support for individual tree files.')
             sys.exit()
 
         # Open tree file
@@ -147,8 +150,7 @@ class TreeDB:
         """
         if snapnum not in self._offset_files.keys():
             self._offset_files[snapnum] = h5py.File(
-                    '%s/offsets/offsets_%s.hdf5' % (
-                    self._treedir, str(snapnum).zfill(3)), 'r')
+                '%s/offsets/offsets_%s.hdf5' % (self._treedir, str(snapnum).zfill(3)), 'r')
         return self._offset_files[snapnum]
 
     def get_main_branch(self, snapnum, subfind_id, keysel=None):
@@ -156,7 +158,7 @@ class TreeDB:
         For a subhalo specified by its snapshot number and Subfind ID,
         return the progenitors along its main branch, i.e. all subhalos
         with IDs between SubhaloID and MainLeafProgenitorID.
-        
+
         Parameters
         ----------
         snapnum : int
@@ -172,7 +174,7 @@ class TreeDB:
         subhalo_id = f['SubhaloID'][subfind_id]
         main_leaf_progenitor_id = f['MainLeafProgenitorID'][subfind_id]
         if rownum == -1:
-            print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
+            print('Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id))
             return None
 
         # Create branch instance
@@ -187,7 +189,7 @@ class TreeDB:
         return all the objects in the subtree which is rooted on the
         subhalo of interest, i.e. all subhalos with IDs between SubhaloID
         and LastProgenitorID. Note that this includes the given subhalo itself.
-        
+
         Parameters
         ----------
         snapnum : int
@@ -204,14 +206,14 @@ class TreeDB:
         subhalo_id = f['SubhaloID'][subfind_id]
         last_progenitor_id = f['LastProgenitorID'][subfind_id]
         if rownum == -1:
-            print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
+            print('Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id))
             return None
 
         # Create branch instance
         row_start = rownum
         row_end = rownum + (last_progenitor_id - subhalo_id)
         subtree = _AdjacentRows(self._treefile, row_start, row_end, keysel=keysel)
-        
+
         return subtree
 
     def _get_subhalos_between_root_and_given(self, snapnum, subfind_id, keysel=None):
@@ -219,7 +221,7 @@ class TreeDB:
         Return all subhalos with IDs between RootDescendantID and
         SubhaloID (of the given subhalo), in a depth-first fashion.
         This function is used by "get_forward_branch."
-        
+
         Parameters
         ----------
         snapnum : int
@@ -234,7 +236,7 @@ class TreeDB:
         rownum = f['RowNum'][subfind_id]
         subhalo_id = f['SubhaloID'][subfind_id]
         if rownum == -1:
-            print 'Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id)
+            print('Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id))
             return None
 
         # Get root_descendant_id from merger tree
@@ -245,7 +247,8 @@ class TreeDB:
         row_end = rownum
 
         # Create branch instance
-        branch = _AdjacentRows(self._treefile, row_start, row_end, row_original=rownum, keysel=keysel)
+        branch = _AdjacentRows(self._treefile, row_start, row_end,
+                               row_original=rownum, keysel=keysel)
         return branch
 
     def get_direct_progenitors(self, snapnum, subfind_id, **kwargs):
