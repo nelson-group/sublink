@@ -216,14 +216,13 @@ std::vector<T> read_block(const std::string& basedir,
   sstream << file_name_base << ".0.hdf5";
   std::string file_name = sstream.str();
 
-  // Get total number of particles (although this attribute is
-  // actually WRONG for large simulations such as Illustris-1,
-  // it is only used as a lower bound for the output array size
-  // and for consistency checks, so it does not affect any of
-  // our results).
-  auto npart_total_vect = get_vector_attribute<uint32_t>(file_name,
+  // Get total number of particles
+  auto npart_total_vect_lowword = get_vector_attribute<uint32_t>(file_name,
       "NumPart_Total");
-  part_id_type npart_total = npart_total_vect[parttype];
+  auto npart_total_vect_highword = get_vector_attribute<uint32_t>(file_name,
+      "NumPart_Total_HighWord");
+  part_id_type npart_total = (int64_t)npart_total_vect_lowword[parttype] | 
+                             ((int64_t)npart_total_vect_highword[parttype] << 32);
 
   // Allocate memory for output vector (npart_total is actually
   // a lower bound; see comments above)
@@ -253,7 +252,8 @@ std::vector<T> read_block(const std::string& basedir,
 
   // Check total number of particles with header.
   if (data_total.size() != npart_total)
-    std::cerr << "BAD: total number of particles does not match with header.\n";
+    std::cerr << "BAD: total number of particles does not match with header ["
+              << data_total.size() << " vs " << npart_total << "].\n";
 
   return data_total;
 }
