@@ -33,7 +33,7 @@ def read_block(basedir, snapnum, field_name, group_name):
         # Only proceed if file exists
         if not os.path.exists(filename):
             if filenum == 0:
-                print 'Snapshot %d seems to be empty. Skipping...' % (snapnum)
+                print('Snapshot %d seems to be empty. Skipping...' % (snapnum))
                 return None
             else:
                 # Note that nfiles is only defined for filenum > 0
@@ -48,8 +48,8 @@ def read_block(basedir, snapnum, field_name, group_name):
             # Open file
             f = h5py.File(filename, 'r')
         except:
-            print 'Corrupt file:', filename
-            print 'Skipping...'
+            print('Corrupt file:', filename)
+            print('Skipping...')
             # Get next file
             filenum += 1
             continue
@@ -58,7 +58,7 @@ def read_block(basedir, snapnum, field_name, group_name):
         if field_name not in f[group_name].keys():
             f.close()
             if filenum == 0:
-                #print 'Snapshot %d seems to be empty. Skipping...' % (snapnum)
+                #print('Snapshot %d seems to be empty. Skipping...' % (snapnum))
                 return None
             else:
                 # Note that nfiles is only defined for filenum > 0
@@ -100,9 +100,9 @@ def read_block(basedir, snapnum, field_name, group_name):
 
     # Sanity check:
     if skip != total_num_objects:
-        print 'Bad number of objects when reading %s, snapshot %d!' % (field_name, snapnum)
+        print('Bad number of objects when reading %s, snapshot %d!' % (field_name, snapnum))
 
-    #print 'Finished loading %s (cur_dimension %d) from snapshot %d.' % (field_name, cur_dimension, snapnum)
+    #print('Finished loading %s (cur_dimension %d) from snapshot %d.' % (field_name, cur_dimension, snapnum))
     return retval
 
 # --------------------------- MAIN FUNCTIONS -------------------------------
@@ -115,7 +115,7 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
     """
 
     # Load snapshot numbers and Subfind IDs, for once, into memory
-    print 'Loading snapnum and subfind_id...'
+    print('Loading snapnum and subfind_id...')
     snapnums_dict = {}
     subfind_ids_dict = {}
     nrows_dict = {}
@@ -130,7 +130,7 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
         nrows_dict[filenum] = f['Tree'].shape[0]
         f.close()
         # Next file
-        print 'Finished for file %d.' % (filenum)
+        print('Finished for file %d.' % (filenum))
         filenum += 1
         filename = treedir + '/tree.' + str(filenum) + '.hdf5'
 
@@ -170,7 +170,7 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
         # Load data from catalog
         data_catalog = {}
         sub_gr_nr = {}  # only needed if dealing with FoF group quantity
-        print 'Loading %s from catalog...' % (field_name)
+        print('Loading %s from catalog...' % (field_name))
         for snapnum in range(snapnum_first, snapnum_last+1):
             # Note that some snapshots may be empty:
             retval = read_block(basedir, snapnum, field_name, group_name)
@@ -187,7 +187,7 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
         if not os.path.exists(dir_newcolumn):
             os.popen('mkdir -p ' + dir_newcolumn)
 
-        print 'Ordering values and writing to files...'
+        print('Ordering values and writing to files...')
         # Repeat for every tree file
         for filenum in nrows_dict.keys():
             # Create HDF5 file for the new column
@@ -200,7 +200,7 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
             elif len(field_shape) == 2:
                 data_for_table = np.empty((nrows_dict[filenum], field_shape[1]), dtype=field_dtype)
             else:
-                print 'No support for %d-dimensional data.' % (len(field_shape))
+                print('No support for %d-dimensional data.' % (len(field_shape)))
                 raise
 
             if group_name == 'Subhalo':
@@ -216,7 +216,7 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
             f_newcolumn.create_dataset(field_name, data=data_for_table)
             f_newcolumn.close()
             
-        print 'Finished writing %s to files.\n' % (field_name)
+        print('Finished writing %s to files.\n' % (field_name))
 
 if __name__ == '__main__':
     # Get arguments
@@ -228,7 +228,7 @@ if __name__ == '__main__':
         num_jobs = int(sys.argv[5])
         job_position = int(sys.argv[6])
     except:
-        print 'Arguments: basedir treedir snapnum_first snapnum_last use_mpi num_jobs job_position'
+        print('Arguments: basedir treedir snapnum_first snapnum_last use_mpi num_jobs job_position')
         sys.exit()
 
     # Note: must run a job array with, e.g., num_jobs=8 and job_position=0-7

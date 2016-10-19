@@ -52,7 +52,7 @@ def create_extended_trees(treedir, basedir, snapnum_last):
         f_extended.close()
 
         # Next file
-        print 'Finished for file %d.' % (filenum)
+        print('Finished for file %d.' % (filenum))
         filenum += 1
         filename_minimal = treedir + '/tree.' + str(filenum) + '.hdf5'
 
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         treedir = sys.argv[2]
         snapnum_last = int(sys.argv[3])
     except:
-        print 'Arguments: basedir treedir snapnum_last'
+        print('Arguments: basedir treedir snapnum_last')
         sys.exit()
 
     create_extended_trees(treedir, basedir, snapnum_last)

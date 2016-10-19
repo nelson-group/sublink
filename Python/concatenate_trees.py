@@ -40,7 +40,7 @@ def concatenate_datasets(treepath):
 
         # Add dataset to file
         h5file_full.create_dataset(field_name, data=tmp_array)
-        print 'Finished for %s.' % (field_name)
+        print('Finished for %s.' % (field_name))
 
     # Close (and flush) the big file
     h5file_full.close()
@@ -49,6 +49,6 @@ if __name__ == '__main__':
     try:
         treepath = sys.argv[1]
     except:
-        print 'Arguments: treepath'
+        print('Arguments: treepath')
         sys.exit()
     concatenate_datasets(treepath)
