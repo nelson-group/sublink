@@ -372,6 +372,7 @@ private:
     std::vector<std::vector<Candidate>> scores(snap1_->nsubs());
     for (auto data_it = data_.begin(); data_it+1 < data_.end(); ++data_it) {
 
+      // Check for bad part_id_type (see 2016/04/25 commit)
       assert(data_it->id != 0);
 
       // Only care about repeated IDs
