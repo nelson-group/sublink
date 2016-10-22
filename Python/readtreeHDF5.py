@@ -5,7 +5,7 @@ import os
 
 """
 Simple Python script for reading merger tree HDF5 files
-in "database mode, " which is optimized for extracting
+in "database mode," which is optimized for extracting
 quantities along the main branch of a subhalo.
 
 For convenience, there are some built-in functions to do
@@ -21,7 +21,7 @@ This allows for more flexibility and faster tree traversal,
 but is only supported in C++ (this approach would be too
 memory-expensive in Python).
 
-Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+Vicente Rodriguez-Gomez (vrg@jhu.edu)
 
 --------------- USAGE EXAMPLE: PRINT STELLAR MASS HISTORY ---------------
 
@@ -112,12 +112,12 @@ class TreeDB:
         name : string, optional
                Base name of the HDF5 files, which by default is 'tree_extended'.
         filenum : int, optional
-               File number of the HDF5 file of interest; -1 refers to the full,
-               "concatenated" tree file.
+               File number of the tree file of interest; -1 loads data from
+               all tree files (default).
         """
 
         # Check that a few files/paths exist
-        for rel_path in ['tree_extended.hdf5', 'offsets']:
+        for rel_path in ['%s.0.hdf5' % (name), 'offsets']:
             if not os.path.exists(treedir + '/' + rel_path):
                 print('Path not found: ' + treedir + '/' + rel_path)
                 sys.exit()
@@ -125,26 +125,48 @@ class TreeDB:
             print('Currently no support for individual tree files.')
             sys.exit()
 
-        # Open tree file
-        treefile = h5py.File(treedir + '/tree_extended.hdf5', 'r')
+        # Load file offsets
+        f = h5py.File('%s/offsets/offsets_000.hdf5' % (treedir))
+        self._file_offsets = f['FileOffsets'][:]
+        f.close()
 
         # Set some attributes
         self._treedir = treedir
         self._name = name
         self._filenum = filenum
-        self._treefile = treefile
-        self._offset_files = {}  # one per snapshot
+        self._tree_files = {} # open tree files "on demand"
+        self._offset_files = {} # same with offset files
 
     def __del__(self):
         """
         Close files. All open objects become invalid.
         """
-        self._treefile.close()
+        for f in self._tree_files.values():
+            f.close()
         for f in self._offset_files.values():
             f.close()
 
+    def _get_filenum(self, rownum):
+        """
+        Get file number corresponding to a given "global" row number
+        (the full tree is guaranteed to be in the same file).
+        """
+        return np.searchsorted(self._file_offsets, rownum, side='right')-1
+
+    def _get_tree_file(self, filenum):
+        """
+        Get tree file.
+        If necessary, add new entry to tree files dictionary.
+        Otherwise, return existing one.
+        """
+        if filenum not in self._tree_files.keys():
+            self._tree_files[filenum] = h5py.File(
+                '%s/tree_extended.%d.hdf5' % (self._treedir, filenum), 'r')
+        return self._tree_files[filenum]
+
     def _get_offset_file(self, snapnum):
         """
+        Get offsets file.
         If necessary, add new entry to offset files dictionary.
         Otherwise, return existing one.
         """
@@ -170,17 +192,22 @@ class TreeDB:
         """
         # Get row number and other info from offset tables
         f = self._get_offset_file(snapnum)
-        rownum = f['RowNum'][subfind_id]
+        rownum = f['RowNum'][subfind_id]  # "global" row number
         subhalo_id = f['SubhaloID'][subfind_id]
         main_leaf_progenitor_id = f['MainLeafProgenitorID'][subfind_id]
         if rownum == -1:
             print('Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id))
+            print('This object probably has zero DM or baryonic (stars + SF gas) elements.')
             return None
 
+        # "Local" row numbers (i.e., in the given tree file)
+        filenum = self._get_filenum(rownum)
+        row_start = rownum - self._file_offsets[filenum]
+        row_end = row_start + (main_leaf_progenitor_id - subhalo_id)
+
         # Create branch instance
-        row_start = rownum
-        row_end = rownum + (main_leaf_progenitor_id - subhalo_id)
-        branch = _AdjacentRows(self._treefile, row_start, row_end, keysel=keysel)
+        treefile = self._get_tree_file(filenum)
+        branch = _AdjacentRows(treefile, row_start, row_end, keysel=keysel)
         return branch
 
     def get_all_progenitors(self, snapnum, subfind_id, keysel=None):
@@ -207,13 +234,17 @@ class TreeDB:
         last_progenitor_id = f['LastProgenitorID'][subfind_id]
         if rownum == -1:
             print('Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id))
+            print('This object probably has zero DM or baryonic (stars + SF gas) elements.')
             return None
 
-        # Create branch instance
-        row_start = rownum
-        row_end = rownum + (last_progenitor_id - subhalo_id)
-        subtree = _AdjacentRows(self._treefile, row_start, row_end, keysel=keysel)
+        # "Local" row numbers (i.e., in the given tree file)
+        filenum = self._get_filenum(rownum)
+        row_start = rownum - self._file_offsets[filenum]
+        row_end = row_start + (last_progenitor_id - subhalo_id)
 
+        # Create branch instance
+        treefile = self._get_tree_file(filenum)
+        subtree = _AdjacentRows(treefile, row_start, row_end, keysel=keysel)
         return subtree
 
     def _get_subhalos_between_root_and_given(self, snapnum, subfind_id, keysel=None):
@@ -237,18 +268,21 @@ class TreeDB:
         subhalo_id = f['SubhaloID'][subfind_id]
         if rownum == -1:
             print('Subhalo not found: snapnum = %d, subfind_id = %d.' % (snapnum, subfind_id))
+            print('This object probably has zero DM or baryonic (stars + SF gas) elements.')
             return None
 
         # Get root_descendant_id from merger tree
-        root_descendant_id = self._treefile['RootDescendantID'][rownum]
+        filenum = self._get_filenum(rownum)
+        row_end = rownum - self._file_offsets[filenum]
+        treefile = self._get_tree_file(filenum)
+        root_descendant_id = treefile['RootDescendantID'][row_end]
 
         # We know the row number of the root descendant without searching for it
-        row_start = rownum - (subhalo_id - root_descendant_id)
-        row_end = rownum
+        row_start = row_end - (subhalo_id - root_descendant_id)
 
         # Create branch instance
-        branch = _AdjacentRows(self._treefile, row_start, row_end,
-                               row_original=rownum, keysel=keysel)
+        branch = _AdjacentRows(treefile, row_start, row_end,
+                               row_original=row_end, keysel=keysel)
         return branch
 
     def get_direct_progenitors(self, snapnum, subfind_id, **kwargs):
