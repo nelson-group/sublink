@@ -17,7 +17,7 @@ int main()
 {
   // Load Tree object
   std::string treedir = "/n/ghernquist/vrodrigu/MergerTrees/output/Galaxies/Illustris/L75n455FP";
-  int filenum = -1;  // "concatenated" tree file
+  int filenum = -1;  // read from all merger tree files
   std::string name = "tree_extended";  // Full format
   Tree tree(treedir, name, filenum);
 

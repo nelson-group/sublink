@@ -39,7 +39,7 @@ void infall_catalog(const std::string& basedir, const std::string& treedir,
   // Load merger tree
   std::cout << "Loading merger tree...\n";
   WallClock wall_clock;
-  int filenum = -1;  // "concatenated" tree file
+  int filenum = -1;  // read from all merger tree files
   std::string name = "tree_extended";  // Full format
   Tree tree(treedir, name, filenum);
   std::cout << "Loaded merger tree. Total time: " <<

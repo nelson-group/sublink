@@ -451,7 +451,7 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
   // Load merger tree
   wall_clock.start();
   std::cout << "Loading merger tree...\n";
-  int filenum = -1;  // "concatenated" tree file
+  int filenum = -1;  // read from all merger tree files
   std::string name = "tree_extended";  // Full format
   Tree tree(treedir, name, filenum);
   std::cout << "Loaded merger tree. Total time: " <<

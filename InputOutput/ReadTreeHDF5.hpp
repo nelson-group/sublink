@@ -173,23 +173,19 @@ public:
 
   /** @brief Construct a Tree from an HDF5 file.
    * @param[in] treedir Directory containing the merger tree files.
-   * @param[in] name Suffix of the merger tree filenames, e.g., "extended".
-   * @param[in] filenum File number; -1 for the full, "concatenated"
-   *                    merger tree file.
+   * @param[in] name Suffix of the merger tree filenames, e.g., "tree_extended".
+   * @param[in] filenum File number; -1 reads data from all merger tree files.
    */
   Tree(const std::string& treedir, const std::string& name, const int filenum)
       : subhalos_() {
 
-    // Create filename from the given arguments.
+    // "Base" path of the merger tree files.
     std::stringstream tmp_stream;
-    if (filenum == -1)
-      tmp_stream << treedir << "/" << name << ".hdf5";
-    else
-      tmp_stream << treedir << "/" << name << "." << filenum << ".hdf5";
-    std::string treefilename = tmp_stream.str();
+    tmp_stream << treedir << "/" << name;
+    std::string treefilebase = tmp_stream.str();
 
     // Get array with subhalos sorted by their unique ID.
-    auto all_subs = get_sorted_subhalos(treefilename);
+    auto all_subs = get_sorted_subhalos(treefilebase, filenum);
 
     // Link subhalos
     std::cout << "Linking subhalos..." << std::endl;
@@ -584,39 +580,40 @@ private:
    *         SubhaloIDs and pointers to internal_subhalos.
    */
   std::vector<internal_subhalo*> get_sorted_subhalos(
-      const std::string& treefilename) const {
+      const std::string& treefilebase, const int filenum) const {
+
     // Read data
-    std::cout << "Reading data from file " << treefilename << "...\n";
+    std::cout << "Reading data from path " << treefilebase << "...\n";
     WallClock wall_clock;
-    auto SubhaloID = read_dataset<sub_id_type>(treefilename, "SubhaloID");
-    auto SubhaloIDRaw = read_dataset<sub_id_type>(treefilename, "SubhaloIDRaw");
-    auto LastProgenitorID = read_dataset<sub_id_type>(treefilename, "LastProgenitorID");
-    auto MainLeafProgenitorID = read_dataset<sub_id_type>(treefilename, "MainLeafProgenitorID");
-    auto RootDescendantID = read_dataset<sub_id_type>(treefilename, "RootDescendantID");
-    auto TreeID = read_dataset<tree_id_type>(treefilename, "TreeID");
-    auto SnapNum = read_dataset<snapnum_type>(treefilename, "SnapNum");
-    auto FirstProgenitorID = read_dataset<sub_id_type>(treefilename, "FirstProgenitorID");
-    auto NextProgenitorID = read_dataset<sub_id_type>(treefilename, "NextProgenitorID");
-    auto DescendantID = read_dataset<sub_id_type>(treefilename, "DescendantID");
-    auto FirstSubhaloInFOFGroupID = read_dataset<sub_id_type>(treefilename, "FirstSubhaloInFOFGroupID");
-    auto NextSubhaloInFOFGroupID = read_dataset<sub_id_type>(treefilename, "NextSubhaloInFOFGroupID");
-    auto NumParticles = read_dataset<uint32_t>(treefilename, "NumParticles");
-    auto Mass = read_dataset<real_type>(treefilename, "Mass");
-    auto MassHistory = read_dataset<real_type>(treefilename, "MassHistory");
-    auto SubfindID = read_dataset<index_type>(treefilename, "SubfindID");
+    auto SubhaloID = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "SubhaloID");
+    auto SubhaloIDRaw = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "SubhaloIDRaw");
+    auto LastProgenitorID = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "LastProgenitorID");
+    auto MainLeafProgenitorID = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "MainLeafProgenitorID");
+    auto RootDescendantID = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "RootDescendantID");
+    auto TreeID = read_dataset_by_filenum<tree_id_type>(treefilebase, filenum, "TreeID");
+    auto SnapNum = read_dataset_by_filenum<snapnum_type>(treefilebase, filenum, "SnapNum");
+    auto FirstProgenitorID = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "FirstProgenitorID");
+    auto NextProgenitorID = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "NextProgenitorID");
+    auto DescendantID = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "DescendantID");
+    auto FirstSubhaloInFOFGroupID = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "FirstSubhaloInFOFGroupID");
+    auto NextSubhaloInFOFGroupID = read_dataset_by_filenum<sub_id_type>(treefilebase, filenum, "NextSubhaloInFOFGroupID");
+    auto NumParticles = read_dataset_by_filenum<uint32_t>(treefilebase, filenum, "NumParticles");
+    auto Mass = read_dataset_by_filenum<real_type>(treefilebase, filenum, "Mass");
+    auto MassHistory = read_dataset_by_filenum<real_type>(treefilebase, filenum, "MassHistory");
+    auto SubfindID = read_dataset_by_filenum<index_type>(treefilebase, filenum, "SubfindID");
 
 #ifdef COUNT_MERGERS
-    auto SubhaloMassType = read_dataset<FloatArray<6>>(treefilename, "SubhaloMassType");
-    auto SubhaloSFR = read_dataset<real_type>(treefilename, "SubhaloSFR");
-    auto SubhaloStellarPhotometrics = read_dataset<FloatArray<8>>(treefilename, "SubhaloStellarPhotometrics");
+    auto SubhaloMassType = read_dataset_by_filenum<FloatArray<6>>(treefilebase, filenum, "SubhaloMassType");
+    auto SubhaloSFR = read_dataset_by_filenum<real_type>(treefilebase, filenum, "SubhaloSFR");
+    auto SubhaloStellarPhotometrics = read_dataset_by_filenum<FloatArray<8>>(treefilebase, filenum, "SubhaloStellarPhotometrics");
 #endif
 #ifdef INFALL_CATALOG
-    auto GroupPos = read_dataset<FloatArray<3>>(treefilename, "GroupPos");
-    auto Group_R_Crit200 = read_dataset<real_type>(treefilename, "Group_R_Crit200");
-    auto SubhaloMass = read_dataset<real_type>(treefilename, "SubhaloMass");
-    auto SubhaloMassType = read_dataset<FloatArray<6>>(treefilename, "SubhaloMassType");
-    auto SubhaloPos = read_dataset<FloatArray<3>>(treefilename, "SubhaloPos");
-    auto SubhaloVmax = read_dataset<real_type>(treefilename, "SubhaloVmax");
+    auto GroupPos = read_dataset_by_filenum<FloatArray<3>>(treefilebase, filenum, "GroupPos");
+    auto Group_R_Crit200 = read_dataset_by_filenum<real_type>(treefilebase, filenum, "Group_R_Crit200");
+    auto SubhaloMass = read_dataset_by_filenum<real_type>(treefilebase, filenum, "SubhaloMass");
+    auto SubhaloMassType = read_dataset_by_filenum<FloatArray<6>>(treefilebase, filenum, "SubhaloMassType");
+    auto SubhaloPos = read_dataset_by_filenum<FloatArray<3>>(treefilebase, filenum, "SubhaloPos");
+    auto SubhaloVmax = read_dataset_by_filenum<real_type>(treefilebase, filenum, "SubhaloVmax");
 #endif
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 

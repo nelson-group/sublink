@@ -1,2 +1,7 @@
+To do:
+- Should include a "Header" in each merger tree file, at least saying how many
+subhalos there are in the current file and how many there are in all files.
+Once this is done, optimize "read_dataset_manyfiles" function accordingly.
 
+Optional:
 - Modify code to use new halo catalogs, named "groups_NNN.X.hdf5"
