@@ -5,6 +5,8 @@
  * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
  */
 
+#include <array> // (C++11)
+
 /** @brief Type of particle IDs. MUST BE uint32_t for non-LONGIDS runs. */
 typedef uint64_t part_id_type;
 /** @brief Type of subhalo IDs in the merger trees. */
@@ -20,46 +22,13 @@ typedef int16_t snapnum_type;
 /** @brief Type of most physical quantities, e.g., masses. */
 typedef float real_type;
 
+// Replace old FloatArray and DoubleArray types with std::array
+// using alias declarations (C++11):
+
 /** @brief Type for representing arrays of floats (e.g., positions). */
-template <int N = 1>
-struct FloatArray {
-  float elem[N];
-
-  // Typedefs
-  typedef float          value_type;
-  typedef float&         reference;
-  typedef const float&   const_reference;
-  typedef float*         iterator;
-  typedef const float*   const_iterator;
-
-  // Accesors
-  reference       operator[](std::size_t i)       { return elem[i]; }
-  const_reference operator[](std::size_t i) const { return elem[i]; }
-
-  /** Return the number of elements in this FloatArray. */
-  static constexpr int size() {
-    return N;
-  }
-};
+template <int N>
+using FloatArray = std::array<float, N>;
 
 /** @brief Type for representing arrays of doubles (e.g., positions). */
-template <int N = 1>
-struct DoubleArray {
-  double elem[N];
-
-  // Typedefs
-  typedef double          value_type;
-  typedef double&         reference;
-  typedef const double&   const_reference;
-  typedef double*         iterator;
-  typedef const double*   const_iterator;
-
-  // Accesors
-  reference       operator[](std::size_t i)       { return elem[i]; }
-  const_reference operator[](std::size_t i) const { return elem[i]; }
-
-  /** Return the number of elements in this DoubleArray. */
-  static constexpr int size() {
-    return N;
-  }
-};
+template <int N>
+using DoubleArray = std::array<double, N>;

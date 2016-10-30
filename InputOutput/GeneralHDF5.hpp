@@ -29,13 +29,16 @@ bool h5_file_exists(const std::string& file_name) {
     return false;  // Return statement just to remove IDE warning.
 }
 
-/** @brief Function to read a one-dimensional dataset (a.k.a. block,
- * including an array of structs) from a single HDF5 file.
+/** @brief Function to read a dataset (a.k.a. block) from a single HDF5 file.
  *
  * @tparam T Type of the elements in the dataset.
  * @param[in] file_name Path to the input file.
  * @param[in] block_name Name of the dataset.
  * @return A vector with the dataset values.
+ *
+ * @note The return value is a vector (with an appropriately chosen type).
+ *       When reading from a dataset with ndims > 1, the size() of the vector
+ *       equals the size of the first dimension of the dataset.
  */
 template <typename T>
 std::vector<T> read_dataset(const std::string& file_name,
@@ -47,32 +50,36 @@ std::vector<T> read_dataset(const std::string& file_name,
 
   // Get dimensions of the dataset
   H5::DataSpace file_space = dataset.getSpace();
-  const unsigned int rank = file_space.getSimpleExtentNdims();
-  assert(rank == 1); // 1D dataset
-  hsize_t dims_out[rank];
-  file_space.getSimpleExtentDims(dims_out, NULL);
+  const unsigned int file_rank = file_space.getSimpleExtentNdims();
+  hsize_t file_dims[file_rank];
+  file_space.getSimpleExtentDims(file_dims, NULL);
 
   // Dataspace in memory is the same as in the HDF5 file.
-  hsize_t dimsm[rank];
-  for (hsize_t k = 0; k < rank; k++) dimsm[k] = dims_out[k];
-  H5::DataSpace mem_space(rank, dimsm);
+  const unsigned int mem_rank = file_rank;
+  hsize_t mem_dims[mem_rank];
+  for (hsize_t k = 0; k < file_rank; k++) mem_dims[k] = file_dims[k];
+  H5::DataSpace mem_space(mem_rank, mem_dims);
 
   // Read data
-  std::vector<T> retval(dimsm[0]);  // Output vector is 1D.
+  std::vector<T> retval(mem_dims[0]);  // Output vector is 1D.
   dataset.read(retval.data(), dataset.getDataType(), mem_space, file_space);
 
   file.close();
   return retval;
 }
 
-/** @brief Function to read a one-dimensional dataset (a.k.a. block,
- * including an array of structs) from a sequence of HDF5 files
+/** @brief Function to read a dataset (a.k.a. block; usually one-dimensional,
+ * but see note below) from a sequence of HDF5 files
  * with filenames ending in .0.hdf5, .1.hdf5, etc.
  *
  * @tparam T Type of the elements in the dataset.
  * @param[in] file_base Path to the input files, excluding ".N.hdf5".
  * @param[in] block_name Name of the dataset.
  * @return A vector with the dataset values.
+ *
+ * @note The return value is a vector (with an appropriately chosen type).
+ *       When reading from a dataset with ndims > 1, the size() of the vector
+ *       equals the size of the first dimension of the dataset.
  */
 template <typename T>
 std::vector<T> read_dataset_manyfiles(const std::string& file_base,
@@ -97,16 +104,15 @@ std::vector<T> read_dataset_manyfiles(const std::string& file_base,
     H5::H5File file(file_name, H5F_ACC_RDONLY );
     H5::DataSet dataset(file.openDataSet(block_name));
 
-    // Get dimensions of the dataset
+    // Get dimensions of the dataset (in "file space")
     H5::DataSpace file_space = dataset.getSpace();
-    const unsigned int rank = file_space.getSimpleExtentNdims();
-    assert(rank == 1); // 1D dataset
-    hsize_t dims_out[rank];
-    file_space.getSimpleExtentDims(dims_out, NULL);
+    const unsigned int file_rank = file_space.getSimpleExtentNdims();
+    hsize_t file_dims[file_rank];
+    file_space.getSimpleExtentDims(file_dims, NULL);
 
     // Store number of subhalos
-    file_nsubs.push_back(dims_out[0]);
-    nsubs_in_trees += dims_out[0];
+    file_nsubs.push_back(file_dims[0]);
+    nsubs_in_trees += file_dims[0];
     if (filenum > 0)
       file_offsets.push_back(file_offsets[filenum-1] + file_nsubs[filenum-1]);
     else
@@ -116,43 +122,47 @@ std::vector<T> read_dataset_manyfiles(const std::string& file_base,
     file.close();
     filenum += 1;
   }
+  assert(file_nsubs.size() == file_offsets.size());
+  const unsigned int nfiles = file_nsubs.size();
 
   // Store output in 1D vector
   std::vector<T> retval(nsubs_in_trees);
 
-  // Define the "memory dataspace"
-  const unsigned int mem_rank = 1;
-  hsize_t dimsm[mem_rank];
-  dimsm[0] = nsubs_in_trees;
-  H5::DataSpace mem_space(mem_rank, dimsm);
-
-  // Iterate over files to actually read the data
-  const unsigned int nfiles = file_nsubs.size();
+  // Iterate over files to read the data
   std::cout << "Reading " << block_name << " from " << nfiles << " files...\n";
-
   for (filenum = 0; filenum < nfiles; ++filenum) {
     // Path of current merger tree file
     std::stringstream tmp_stream;
     tmp_stream << file_base << "." << filenum << ".hdf5";
     std::string file_name = tmp_stream.str();
 
-    // Open dataset (we know that the file exists)
+    // Open dataset (the file must exist)
     H5::H5File file(file_name, H5F_ACC_RDONLY);
     H5::DataSet dataset(file.openDataSet(block_name));
 
-    // Get dimensions of the dataset
+    // Get dimensions of the dataset (in "file space")
     H5::DataSpace file_space = dataset.getSpace();
+    const unsigned int file_rank = file_space.getSimpleExtentNdims();
+    hsize_t file_dims[file_rank];
+    file_space.getSimpleExtentDims(file_dims, NULL);
+    assert(file_dims[0] == file_nsubs[filenum]); // sanity check
 
-    // Sanity check
-    const unsigned int rank = file_space.getSimpleExtentNdims();
-    assert(rank == 1); // 1D dataset
-    hsize_t dims_out[rank];
-    file_space.getSimpleExtentDims(dims_out, NULL);
-    assert(dims_out[0] == file_nsubs[filenum]);
+    // Define the "memory dataspace", which corresponds to the full,
+    // concatenated data. This is the same for all files.
+    const unsigned int mem_rank = file_rank;
+    hsize_t mem_dims[mem_rank];
+    for (hsize_t k = 0; k < file_rank; ++k)
+      mem_dims[k] = file_dims[k];
+    mem_dims[0] = nsubs_in_trees; // note this line in particular
+    H5::DataSpace mem_space(mem_rank, mem_dims);
 
     // Define "memory hyperslab" (see readdata.cpp from HDF5 tutorial)
     hsize_t offset_out[mem_rank]; // hyperslab offset
     hsize_t count_out[mem_rank]; // hyperslab size
+    for (hsize_t k = 0; k < mem_rank; ++k) {
+      offset_out[k] = 0;
+      count_out[k] = mem_dims[k];
+    }
     offset_out[0] = file_offsets[filenum];
     count_out[0] = file_nsubs[filenum];
     mem_space.selectHyperslab(H5S_SELECT_SET, count_out, offset_out);
@@ -163,7 +173,6 @@ std::vector<T> read_dataset_manyfiles(const std::string& file_base,
     // Close HDF5 file
     file.close();
   }
-
   return retval;
 }
 
@@ -209,7 +218,7 @@ void add_array(H5::H5File& file, const std::vector<T>& array,
   // Define (one-dimensional) dataspace
   hsize_t dimsf[1];  // dataset dimensions
   dimsf[0] = array.size();
-  H5::DataSpace dataspace(1, dimsf);  // rank 1
+  H5::DataSpace dataspace(1, dimsf);  // rank == 1
 
   // Create dataset
   H5::DataSet dataset = file.createDataSet(array_name, datatype, dataspace);
@@ -235,7 +244,7 @@ void add_array_2d(H5::H5File& file, const std::vector<T>& array,
   hsize_t dimsf[2];  // dataset dimensions
   dimsf[0] = array.size();
   dimsf[1] = T::size();  // e.g., FloatArray<6>::size() == 6
-  H5::DataSpace dataspace(2, dimsf);  // rank 2
+  H5::DataSpace dataspace(2, dimsf);  // rank == 2
 
   // Create dataset
   H5::DataSet dataset = file.createDataSet(array_name, datatype, dataspace);
