@@ -29,7 +29,7 @@ namespace subfind {
  * @param[in] filenum File number.
  * @return The attribute value.
  */
-template <class T>
+template <typename T>
 T get_scalar_attribute(const std::string& basedir, const snapnum_type snapnum,
     const std::string& attr_name, const int32_t filenum = 0) {
 
@@ -42,23 +42,19 @@ T get_scalar_attribute(const std::string& basedir, const snapnum_type snapnum,
   std::string file_name = tmp_stream.str();
 
   // Open attribute from file header
-  auto file = new H5::H5File(file_name, H5F_ACC_RDONLY );
-  auto header_group = new H5::Group(file->openGroup("Header"));
-  auto myattr = new H5::Attribute(header_group->openAttribute(attr_name));
+  auto file = H5::H5File(file_name, H5F_ACC_RDONLY );
+  auto header_group = H5::Group(file.openGroup("Header"));
+  auto myattr = H5::Attribute(header_group.openAttribute(attr_name));
 
   // Check that type sizes match (necessary but not sufficient).
-  auto dt = myattr->getDataType();
+  auto dt = myattr.getDataType();
   assert(dt.getSize() == sizeof(T));
 
   // Read attribute
   T retval;
-  myattr->read(myattr->getDataType(), &retval);
+  myattr.read(myattr.getDataType(), &retval);
 
-  // Close file and release resources
-  file->close();
-  delete myattr;
-  delete header_group;
-  delete file;
+  file.close();
 
   return retval;
 }
@@ -75,18 +71,18 @@ T get_scalar_attribute(const std::string& basedir, const snapnum_type snapnum,
  * @pre Dataset is one- or two-dimensional.
  * @return A vector with the dataset values.
  */
-template <class T>
+template <typename T>
 std::vector<T> read_block_single_file(const std::string& file_name,
     const std::string& group_name, const std::string& block_name,
     const int parttype = -1) {
 
   // Open the specified dataset.
-  auto file = new H5::H5File(file_name, H5F_ACC_RDONLY );
-  auto group = new H5::Group(file->openGroup(group_name));
-  auto dataset = new H5::DataSet(group->openDataSet(block_name));
+  auto file = H5::H5File(file_name, H5F_ACC_RDONLY );
+  auto group = H5::Group(file.openGroup(group_name));
+  auto dataset = H5::DataSet(group.openDataSet(block_name));
 
   // Get dimensions of the dataset
-  H5::DataSpace file_space = dataset->getSpace();
+  H5::DataSpace file_space = dataset.getSpace();
   const unsigned int rank = file_space.getSimpleExtentNdims();
   hsize_t dims_out[rank];
   file_space.getSimpleExtentDims(dims_out, NULL);
@@ -113,13 +109,10 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   }
 
   // Read data
-  dataset->read(retval.data(), dataset->getDataType(), mem_space, file_space);
+  dataset.read(retval.data(), dataset.getDataType(), mem_space, file_space);
 
   // Close file and release resources
-  file->close();
-  delete dataset;
-  delete group;
-  delete file;
+  file.close();
 
   return retval;
 }
@@ -138,7 +131,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
  *
  * @return A vector with the dataset values.
  */
-template <class T>
+template <typename T>
 std::vector<T> read_block(const std::string& basedir,
     const snapnum_type snapnum, const std::string& group_name,
     const std::string& block_name, const int parttype = -1) {

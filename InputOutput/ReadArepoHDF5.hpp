@@ -52,28 +52,24 @@ namespace arepo {
  * @param[in] attr_name Name of the attribute.
  * @return The attribute value.
  */
-template <class T>
+template <typename T>
 T get_scalar_attribute(const std::string& file_name,
     const std::string& attr_name) {
 
   // Open attribute from snapshot header
-  auto file = new H5::H5File(file_name, H5F_ACC_RDONLY );
-  auto header_group = new H5::Group(file->openGroup("Header"));
-  auto myattr = new H5::Attribute(header_group->openAttribute(attr_name));
+  auto file = H5::H5File(file_name, H5F_ACC_RDONLY );
+  auto header_group = H5::Group(file.openGroup("Header"));
+  auto myattr = H5::Attribute(header_group.openAttribute(attr_name));
 
   // Check that type sizes match (necessary but not sufficient).
-  auto dt = myattr->getDataType();
+  auto dt = myattr.getDataType();
   assert(dt.getSize() == sizeof(T));
 
   // Read attribute
   T retval;
-  myattr->read(myattr->getDataType(), &retval);
+  myattr.read(myattr.getDataType(), &retval);
 
-  // Close file and release resources
-  file->close();
-  delete myattr;
-  delete header_group;
-  delete file;
+  file.close();
 
   return retval;
 }
@@ -85,33 +81,28 @@ T get_scalar_attribute(const std::string& file_name,
  * @param[in] attr_name Name of the attribute array.
  * @return A vector with the attribute array values.
  */
-template <class T>
+template <typename T>
 std::vector<T> get_vector_attribute(const std::string& file_name,
     const std::string& attr_name) {
   // Open attribute from snapshot header
-
-  auto file = new H5::H5File(file_name, H5F_ACC_RDONLY );
-  auto header_group = new H5::Group(file->openGroup("Header"));
-  auto myattr = new H5::Attribute(header_group->openAttribute(attr_name));
+  auto file = H5::H5File(file_name, H5F_ACC_RDONLY );
+  auto header_group = H5::Group(file.openGroup("Header"));
+  auto myattr = H5::Attribute(header_group.openAttribute(attr_name));
 
   // Check that type sizes match (necessary but not sufficient).
-  auto dt = myattr->getDataType();
+  auto dt = myattr.getDataType();
   assert(dt.getSize() == sizeof(T));
 
   // Deduce length of attribute.
-  auto space = myattr->getSpace();
+  auto space = myattr.getSpace();
   assert(space.getSimpleExtentNdims() == 1);
   auto attr_len = space.getSimpleExtentNpoints();
 
   // Read attribute values directly into vector.
   std::vector<T> retval(attr_len);
-  myattr->read(myattr->getDataType(), retval.data());
+  myattr.read(myattr.getDataType(), retval.data());
 
-  // Close file and release resources
-  file->close();
-  delete myattr;
-  delete header_group;
-  delete file;
+  file.close();
 
   return retval;
 }
@@ -125,7 +116,7 @@ std::vector<T> get_vector_attribute(const std::string& file_name,
  * @param[in] parttype The particle type.
  * @return A vector with the dataset values.
  */
-template <class T>
+template <typename T>
 std::vector<T> read_block_single_file(const std::string& file_name,
     const std::string& block_name, const int parttype) {
 
@@ -135,28 +126,26 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   std::string parttype_str = ss.str();
 
   // Only proceed if group exists (have a peek at the file).
-  auto tmp_file = new H5::H5File(file_name, H5F_ACC_RDONLY, H5P_DEFAULT);
-  if (H5Lexists(tmp_file->getId(), parttype_str.data(), H5P_DEFAULT) == false) {
-    tmp_file->close();
-    delete tmp_file;
+  auto tmp_file = H5::H5File(file_name, H5F_ACC_RDONLY, H5P_DEFAULT);
+  if (H5Lexists(tmp_file.getId(), parttype_str.data(), H5P_DEFAULT) == false) {
+    tmp_file.close();
     return std::vector<T>();
   }
-  tmp_file->close();
-  delete tmp_file;
+  tmp_file.close();
 
   // Open the specified dataset.
-  auto file = new H5::H5File(file_name, H5F_ACC_RDONLY );
-  auto group = new H5::Group(file->openGroup(parttype_str));
-  auto dataset = new H5::DataSet(group->openDataSet(block_name));
+  auto file = H5::H5File(file_name, H5F_ACC_RDONLY );
+  auto group = H5::Group(file.openGroup(parttype_str));
+  auto dataset = H5::DataSet(group.openDataSet(block_name));
 
   // Check that type sizes match (necessary but not sufficient).
-  auto dt = dataset->getDataType();
+  auto dt = dataset.getDataType();
   if( dt.getSize() != sizeof(T) )
     std::cout << " ERROR: Highly probable mismatched LONGIDS and TreeTypes.hpp/part_id_type." << std::endl;
   assert(dt.getSize() == sizeof(T));
 
   // Get dimensions of the dataset
-  H5::DataSpace file_space = dataset->getSpace();
+  H5::DataSpace file_space = dataset.getSpace();
   const unsigned int rank = file_space.getSimpleExtentNdims();
   hsize_t dims_out[rank];
   file_space.getSimpleExtentDims(dims_out, NULL);
@@ -168,13 +157,9 @@ std::vector<T> read_block_single_file(const std::string& file_name,
 
   // Read data
   std::vector<T> retval(dimsm[0]);  // Output vector is 1D.
-  dataset->read(retval.data(), dataset->getDataType(), mem_space, file_space);
+  dataset.read(retval.data(), dataset.getDataType(), mem_space, file_space);
 
-  // Close file and release resources
-  file->close();
-  delete dataset;
-  delete group;
-  delete file;
+  file.close();
 
   return retval;
 }
@@ -199,7 +184,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
  *   for the larger simulations. The function implementation does not rely
  *   on such attributes; they are only used for consistency checks.
  */
-template <class T>
+template <typename T>
 std::vector<T> read_block(const std::string& basedir,
     const int16_t snapnum, const std::string& block_name,
     const int parttype) {
