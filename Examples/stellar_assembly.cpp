@@ -90,16 +90,24 @@ std::vector<real_type> get_galactocentric_distances(
       arepo::get_scalar_attribute<double>(file_name, "BoxSize"));
 
   // Read particle positions.
-  // AD HOC: convert positions from double to float
   std::vector<Point> all_pos;
-  if ((basedir == "/n/hernquistfs1/Illustris/Runs/L75n1820FP/output") &&
-      (snapnum >= 72)) {
+  // Sometimes the coordinates are stored as double type. In that case:
+  tmp_stream.str("");
+  tmp_stream << "/PartType" << parttype;
+  std::string parttype_str = tmp_stream.str();
+  auto file = H5::H5File(file_name, H5F_ACC_RDONLY );
+  auto group = H5::Group(file.openGroup(parttype_str));
+  auto dataset = H5::DataSet(group.openDataSet("Coordinates"));
+  auto dt = dataset.getDataType();
+  file.close();
+  if (dt.getSize() == 8) {
     auto all_pos_double = arepo::read_block<DoubleArray<3>>(
         basedir, snapnum, "Coordinates", parttype);
+    std::cout << "NOTE: converting coordinates from double to float...\n";
     all_pos = std::vector<Point>(all_pos_double.begin(),
         all_pos_double.end());
   }
-  else {
+  else { // hopefully dt.getSize() == 4
     all_pos = arepo::read_block<Point>(
         basedir, snapnum, "Coordinates", parttype);
   }
