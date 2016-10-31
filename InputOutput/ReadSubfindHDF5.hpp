@@ -83,35 +83,52 @@ std::vector<T> read_block_single_file(const std::string& file_name,
 
   // Get dimensions of the dataset
   H5::DataSpace file_space = dataset.getSpace();
-  const unsigned int rank = file_space.getSimpleExtentNdims();
-  hsize_t dims_out[rank];
-  file_space.getSimpleExtentDims(dims_out, NULL);
+  const unsigned int file_rank = file_space.getSimpleExtentNdims();
+  hsize_t file_dims[file_rank];
+  file_space.getSimpleExtentDims(file_dims, NULL);
 
   // When parttype == -1 (default), dataspace in memory is the same
   // as in the HDF5 file.
-  hsize_t dimsm[rank];
-  for (hsize_t k = 0; k < rank; ++k) dimsm[k] = dims_out[k];
-  H5::DataSpace mem_space(rank, dimsm);
+  const unsigned int mem_rank = file_rank;
+  hsize_t mem_dims[mem_rank];
+  for (hsize_t k = 0; k < file_rank; ++k) mem_dims[k] = file_dims[k];
+  H5::DataSpace mem_space(mem_rank, mem_dims);
 
   // Output vector is 1D.
-  std::vector<T> retval(dimsm[0]);
+  std::vector<T> retval(file_dims[0]);
+
+  // Check that datatype sizes match (necessary but not sufficient)
+  if (parttype == -1) {
+    auto dt = dataset.getDataType();
+    std::size_t row_size = dt.getSize();
+    for (unsigned int k = 1; k < file_rank; ++k)
+      row_size = row_size * file_dims[k];
+    if (row_size != sizeof(T)) {
+      std::cerr << "ERROR: mismatched datatype sizes (" << row_size <<
+          " vs " << sizeof(T) << ") when reading " << block_name << ".\n";
+      assert(false);
+    }
+  }
+  else if (parttype >= 0) {
+    auto dt = dataset.getDataType();
+    assert(sizeof(T) == dt.getSize());
+  }
 
   // If parttype != -1, we are only interested in a single column.
   if (parttype != -1) {
-    assert((rank == 2) && (parttype >= 0));
+    assert((file_rank == 2) && (parttype >= 0));
     // Define hyperslab (offset and size) for column of interest.
     hsize_t offset[2] = {0, static_cast<hsize_t>(parttype)};
-    hsize_t count[2]  = {dims_out[0], 1};
+    hsize_t count[2]  = {file_dims[0], 1};
     file_space.selectHyperslab(H5S_SELECT_SET, count, offset);
     // The dataspace becomes 1D
-    hsize_t dimsm_1d[1] = {dims_out[0]};
-    mem_space.setExtentSimple(1, dimsm_1d);
+    hsize_t mem_dims_1d[1] = {file_dims[0]};
+    mem_space.setExtentSimple(1, mem_dims_1d);
   }
 
   // Read data
   dataset.read(retval.data(), dataset.getDataType(), mem_space, file_space);
 
-  // Close file and release resources
   file.close();
 
   return retval;

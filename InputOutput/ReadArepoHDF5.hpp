@@ -14,16 +14,13 @@
  *
  * Usage example 2: read positions of DM particles (define datastruct)
  * @code{.cpp}
- * struct pos_struct{
- *    float x;
- *    float y;
- *    float z;
- * };
+ * #include <array>
+ * using PositionType = std::array<float, 3>;
  * void main() {
  *   std::string snapname = "snapdir_135/snap_135";
  *   const int parttype = 1;
- *   std::vector<pos_struct> pos;
- *   pos = arepo::read_block<pos_struct>(snapname, "Coordinates", parttype);
+ *   std::vector<PositionType> pos;
+ *   pos = arepo::read_block<PositionType>(snapname, "Coordinates", parttype);
  * }
  * @endcode
  *
@@ -107,7 +104,7 @@ std::vector<T> get_vector_attribute(const std::string& file_name,
   return retval;
 }
 
-/** @brief Function to read a one-dimensional dataset (a.k.a. block)
+/** @brief Function to read a dataset (a.k.a. block)
  * from a single file.
  *
  * @tparam T Type of the elements in the dataset.
@@ -115,6 +112,10 @@ std::vector<T> get_vector_attribute(const std::string& file_name,
  * @param[in] block_name Name of the dataset.
  * @param[in] parttype The particle type.
  * @return A vector with the dataset values.
+ *
+ * @note The return value is a vector (with an appropriately chosen type).
+ *       When reading from a dataset with ndims > 1, the size() of the
+ *       output vector equals the size of the first dimension of the dataset.
  */
 template <typename T>
 std::vector<T> read_block_single_file(const std::string& file_name,
@@ -138,25 +139,31 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   auto group = H5::Group(file.openGroup(parttype_str));
   auto dataset = H5::DataSet(group.openDataSet(block_name));
 
-  // Check that type sizes match (necessary but not sufficient).
-  auto dt = dataset.getDataType();
-  if( dt.getSize() != sizeof(T) )
-    std::cout << " ERROR: Highly probable mismatched LONGIDS and TreeTypes.hpp/part_id_type." << std::endl;
-  assert(dt.getSize() == sizeof(T));
-
   // Get dimensions of the dataset
   H5::DataSpace file_space = dataset.getSpace();
-  const unsigned int rank = file_space.getSimpleExtentNdims();
-  hsize_t dims_out[rank];
-  file_space.getSimpleExtentDims(dims_out, NULL);
+  const unsigned int file_rank = file_space.getSimpleExtentNdims();
+  hsize_t file_dims[file_rank];
+  file_space.getSimpleExtentDims(file_dims, NULL);
+
+  // Check that datatype sizes match (necessary but not sufficient)
+  auto dt = dataset.getDataType();
+  std::size_t row_size = dt.getSize();
+  for (unsigned int k = 1; k < file_rank; ++k)
+    row_size = row_size * file_dims[k];
+  if (row_size != sizeof(T)) {
+    std::cerr << "ERROR: mismatched datatype sizes (" << row_size <<
+        " vs " << sizeof(T) << ") when reading " << block_name << ".\n";
+    assert(false);
+  }
 
   // Dataspace in memory is the same as in the HDF5 file.
-  hsize_t dimsm[rank];
-  for (hsize_t k = 0; k < rank; k++) dimsm[k] = dims_out[k];
-  H5::DataSpace mem_space(rank, dimsm);
+  const unsigned int mem_rank = file_rank;
+  hsize_t mem_dims[mem_rank];
+  for (hsize_t k = 0; k < file_rank; ++k) mem_dims[k] = file_dims[k];
+  H5::DataSpace mem_space(mem_rank, mem_dims);
 
   // Read data
-  std::vector<T> retval(dimsm[0]);  // Output vector is 1D.
+  std::vector<T> retval(mem_dims[0]);  // Output vector is 1D.
   dataset.read(retval.data(), dataset.getDataType(), mem_space, file_space);
 
   file.close();
@@ -164,7 +171,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   return retval;
 }
 
-/** @brief Function to read a one-dimensional dataset (a.k.a. block).
+/** @brief Function to read a dataset (a.k.a. block) from the snapshot files.
  *
  * @tparam T Type of the elements in the datasets.
  * @param[in] basedir Directory containing the snapshot files.
@@ -173,16 +180,10 @@ std::vector<T> read_block_single_file(const std::string& file_name,
  * @param[in] parttype The particle type.
  * @return A vector with the dataset values.
  *
- * @note @li Although the return value is a vector, which is one-dimensional
- *   by nature, it is actually possible to read data from a 2D array (e.g.,
- *   positions) by letting @a T be a user-defined type, such as a struct
- *   with coordinates x,y,z.
- *
- * @li In Illustris, the particle IDs have type uint64. However, the attributes
- *   @c NumPart_ThisFile and @c NumPart_Total from the Header have types
- *   int32 and uint32, respectively, which results in incorrect numbers
- *   for the larger simulations. The function implementation does not rely
- *   on such attributes; they are only used for consistency checks.
+ * @note The return value is a vector (with an appropriately chosen type).
+ *       When reading from a dataset with ndims > 1, the size() of the
+ *       output vector equals the size of the first dimension of the
+ *       (concatenated) dataset.
  */
 template <typename T>
 std::vector<T> read_block(const std::string& basedir,

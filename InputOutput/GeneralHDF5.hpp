@@ -37,8 +37,8 @@ bool h5_file_exists(const std::string& file_name) {
  * @return A vector with the dataset values.
  *
  * @note The return value is a vector (with an appropriately chosen type).
- *       When reading from a dataset with ndims > 1, the size() of the vector
- *       equals the size of the first dimension of the dataset.
+ *       When reading from a dataset with ndims > 1, the size() of the
+ *       output vector equals the size of the first dimension of the dataset.
  */
 template <typename T>
 std::vector<T> read_dataset(const std::string& file_name,
@@ -54,10 +54,21 @@ std::vector<T> read_dataset(const std::string& file_name,
   hsize_t file_dims[file_rank];
   file_space.getSimpleExtentDims(file_dims, NULL);
 
+  // Check that datatype sizes match (necessary but not sufficient)
+  auto dt = dataset.getDataType();
+  std::size_t row_size = dt.getSize();
+  for (unsigned int k = 1; k < file_rank; ++k)
+    row_size = row_size * file_dims[k];
+  if (row_size != sizeof(T)) {
+    std::cerr << "ERROR: mismatched datatype sizes (" << row_size <<
+        " vs " << sizeof(T) << ") when reading " << block_name << ".\n";
+    assert(false);
+  }
+
   // Dataspace in memory is the same as in the HDF5 file.
   const unsigned int mem_rank = file_rank;
   hsize_t mem_dims[mem_rank];
-  for (hsize_t k = 0; k < file_rank; k++) mem_dims[k] = file_dims[k];
+  for (hsize_t k = 0; k < file_rank; ++k) mem_dims[k] = file_dims[k];
   H5::DataSpace mem_space(mem_rank, mem_dims);
 
   // Read data
@@ -68,9 +79,8 @@ std::vector<T> read_dataset(const std::string& file_name,
   return retval;
 }
 
-/** @brief Function to read a dataset (a.k.a. block; usually one-dimensional,
- * but see note below) from a sequence of HDF5 files
- * with filenames ending in .0.hdf5, .1.hdf5, etc.
+/** @brief Function to read a dataset (a.k.a. block) from a sequence of
+ * HDF5 files with filenames ending in .0.hdf5, .1.hdf5, etc.
  *
  * @tparam T Type of the elements in the dataset.
  * @param[in] file_base Path to the input files, excluding ".N.hdf5".
@@ -78,8 +88,9 @@ std::vector<T> read_dataset(const std::string& file_name,
  * @return A vector with the dataset values.
  *
  * @note The return value is a vector (with an appropriately chosen type).
- *       When reading from a dataset with ndims > 1, the size() of the vector
- *       equals the size of the first dimension of the dataset.
+ *       When reading from a dataset with ndims > 1, the size() of the
+ *       output vector equals the size of the first dimension of the
+ *       (concatenated) dataset.
  */
 template <typename T>
 std::vector<T> read_dataset_manyfiles(const std::string& file_base,
@@ -146,6 +157,17 @@ std::vector<T> read_dataset_manyfiles(const std::string& file_base,
     hsize_t file_dims[file_rank];
     file_space.getSimpleExtentDims(file_dims, NULL);
     assert(file_dims[0] == file_nsubs[filenum]); // sanity check
+
+    // Check that datatype sizes match (necessary but not sufficient)
+    auto dt = dataset.getDataType();
+    std::size_t row_size = dt.getSize();
+    for (unsigned int k = 1; k < file_rank; ++k)
+      row_size = row_size * file_dims[k];
+    if (row_size != sizeof(T)) {
+      std::cerr << "ERROR: mismatched datatype sizes (" << row_size <<
+          " vs " << sizeof(T) << ") when reading " << block_name << ".\n";
+      assert(false);
+    }
 
     // Define the "memory dataspace", which corresponds to the full,
     // concatenated data. This is the same for all files.
