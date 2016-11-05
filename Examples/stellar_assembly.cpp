@@ -226,7 +226,7 @@ void update_stars(std::vector<ParticleInfo>& cur_stars,
        // we ignore both particles (anyway, this only happens for ten or so
        // particles at very high redshifts).
        if ((it+1)->snapnum_at_formation < snapnum) {
-         std::cerr << "WARNING: Ignoring particles with ParticleID " <<
+         std::cout << "WARNING: Ignoring particles with ParticleID " <<
              it->id << " that formed in snapshots " << it->snapnum_at_formation <<
              " and " << (it+1)->snapnum_at_formation << ".\n";
          skip_one = true;
@@ -234,7 +234,7 @@ void update_stars(std::vector<ParticleInfo>& cur_stars,
        }
        else { // (it+1)->snapnum_at_formation == snapnum
          if (it->snapnum_at_formation == snapnum) {
-           std::cerr << "WARNING: ParticleID " << it->id <<
+           std::cout << "WARNING: ParticleID " << it->id <<
                " appears twice in snapshot " << snapnum << ".\n";
          }
          else { // it->snapnum_at_formation < snapnum
@@ -388,8 +388,17 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
       auto it = std::lower_bound(cur_stars.begin(), cur_stars.end(),
           ParticleID[pos]);
       assert(it->id == ParticleID[pos]);
-      auto cur_info = *it;
 
+      // Skip over duplicate IDs because they mess everything up
+      if ((it < cur_stars.end()-1) && (it->id == (it+1)->id)) {
+        std::cout << "WARNING: Skipping duplicate ParticleID " << it->id << "...\n";
+        // Define as ex-situ and leave other properties undefined (= -1).
+        InSitu[pos] = 0;
+        continue;
+      }
+
+      // Store formation info of current particle.
+      auto cur_info = *it;
       SubfindIDAtFormation[pos] = cur_info.subfind_id_at_formation;
       SnapNumAtFormation[pos] = cur_info.snapnum_at_formation;
       DistanceAtFormation[pos] = cur_info.distance_at_formation;
