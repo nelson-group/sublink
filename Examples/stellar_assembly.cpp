@@ -207,27 +207,64 @@ void update_stars(std::vector<ParticleInfo>& cur_stars,
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";
   std::cout << "Speedup: " << cpu_clock.seconds()/wall_clock.seconds() << ".\n";
 
-  // Iterate over particles and add info to cur_stars, skipping over
-  // particles that were formed before the current snapshot.
-  std::cout << "Finding particle coincidences...\n";
-  wall_clock.start();
-  bool skip_one = false;
-  for (auto it = stars_aux.begin(); it != stars_aux.end(); ++it) {
-    if (skip_one) {
-      skip_one = false;
-      continue;
-    }
-    if ((it+1 != stars_aux.end()) && (it->id == (it+1)->id)) {
-      // Particle is not new. Keep old info.
-      skip_one = true;
-    }
-    else if (it->snapnum_at_formation != snapnum)
-      // Particle disappeared from current snapshot. Skip.
-      continue;
-    cur_stars.push_back(*it);
-  }
-  std::cout << "Time: " << wall_clock.seconds() << " s.\n";
-  assert(cur_stars.size() == ParticleID.size());
+  // Iterate over particles and add info to cur_stars.
+  std::cout << "Dealing with particle coincidences...\n";
+   wall_clock.start();
+   uint64_t disappeared_particles = 0;
+   bool skip_one = false;
+   for (auto it = stars_aux.begin(); it != stars_aux.end(); ++it) {
+     if (skip_one) {
+       skip_one = false;
+       continue;
+     }
+     if ((it+1 != stars_aux.end()) && (it->id == (it+1)->id)) {
+       // Check that particles have been added in "chronological" order:
+       assert(it->snapnum_at_formation <= (it+1)->snapnum_at_formation);
+       assert((it+1)->snapnum_at_formation <= snapnum);
+       // Now, we handle duplicate ParticleIDs (yes, this happens
+       // in IllustrisTNG) in the following way:
+       // 1) If the repeated ID is new (snapnum_at_formation == snapnum),
+       // we add both particles to cur_stars (so that the ParticleID vector
+       // has the right size, etc.), but they are ignored in later snapshots.
+       // 2) If the repeated ID is old (snapnum_at_formation < snapnum),
+       // we ignore both particles (anyway, this only happens for ten or so
+       // particles at very high redshifts).
+       if ((it+1)->snapnum_at_formation < snapnum) {
+         std::cerr << "WARNING: Ignoring particles with ParticleID " <<
+             it->id << " that formed in snapshots " << it->snapnum_at_formation <<
+             " and " << (it+1)->snapnum_at_formation << ".\n";
+         skip_one = true;
+         continue;
+       }
+       else { // (it+1)->snapnum_at_formation == snapnum
+         if (it->snapnum_at_formation == snapnum) {
+           std::cerr << "WARNING: ParticleID " << it->id <<
+               " appears twice in snapshot " << snapnum << ".\n";
+         }
+         else { // it->snapnum_at_formation < snapnum
+           // All good. Particle is not new. Only add old info to cur_stars.
+           skip_one = true;
+         }
+       }
+     }
+     else { // it->id != (it+1)->id (or this is the last particle)
+       if (it->snapnum_at_formation < snapnum) {
+         // Particle disappeared from current snapshot (wind particle?).
+         // Do not add to updated cur_stars.
+         disappeared_particles += 1;
+         continue;
+       }
+       else {
+         // New stellar particle. Add to cur_stars.
+         assert(it->snapnum_at_formation == snapnum);
+       }
+     }
+     cur_stars.push_back(*it);
+   }
+   std::cout << "Time: " << wall_clock.seconds() << " s.\n";
+   std::cout << disappeared_particles << " of " << cur_stars.size() <<
+       " particles disappeared in this snapshot.\n";
+   assert(cur_stars.size() == ParticleID.size());
 }
 
 /** @brief Carry out stellar assembly calculations. */
