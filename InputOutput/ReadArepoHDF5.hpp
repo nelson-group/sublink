@@ -104,6 +104,61 @@ std::vector<T> get_vector_attribute(const std::string& file_name,
   return retval;
 }
 
+/** @brief Get the datatype size of a given dataset (a.k.a. block).
+ * @param[in] basedir Directory containing the snapshot files.
+ * @param[in] snapnum Snapshot number.
+ * @param[in] block_name Name of the dataset.
+ * @param[in] parttype The particle type.
+ *
+ * @return The datatype size of the dataset.
+ */
+std::size_t get_datatype_size(const std::string& basedir,
+    const int16_t snapnum, const std::string& block_name,
+    const int parttype) {
+
+  // Group name corresponding to particle type.
+  std::stringstream ss;
+  ss << "/PartType" << parttype;
+  std::string parttype_str = ss.str();
+
+  // Snapshot filename without the file number
+  ss.str("");
+  ss << basedir << "/snapdir_" <<
+      std::setfill('0') << std::setw(3) << snapnum << "/snap_" <<
+      std::setfill('0') << std::setw(3) << snapnum;
+  std::string file_name_base = ss.str();
+
+  // Name of first file (just to read header)
+  ss.str("");
+  ss << file_name_base << ".0.hdf5";
+  std::string file_name = ss.str();
+
+  // Iterate over files until we find one that contains the specified dataset.
+  auto nfiles = get_scalar_attribute<int32_t>(file_name, "NumFilesPerSnapshot");
+  for (int32_t filenum=0; filenum < nfiles; filenum++) {
+    // Open current file
+    ss.str("");
+    ss << file_name_base << "." << filenum << ".hdf5";
+    file_name = ss.str();
+    auto file = H5::H5File(file_name, H5F_ACC_RDONLY);
+    // Only proceed if group exists.
+    if (!H5Lexists(file.getId(), parttype_str.data(), H5P_DEFAULT)) {
+      file.close();
+      continue;
+    }
+    // Return datatype size.
+    auto group = H5::Group(file.openGroup(parttype_str));
+    auto dataset = H5::DataSet(group.openDataSet("Coordinates"));
+    auto dt = dataset.getDataType();
+    file.close();
+    return dt.getSize();
+  }
+  std::cerr << "ERROR: " << parttype_str << "/" << block_name << " not found!\n";
+  assert(false);
+  return 0;
+}
+
+
 /** @brief Function to read a dataset (a.k.a. block)
  * from a single file.
  *

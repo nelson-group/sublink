@@ -92,22 +92,18 @@ std::vector<real_type> get_galactocentric_distances(
   // Read particle positions.
   std::vector<Point> all_pos;
   // Sometimes the coordinates are stored as double type. In that case:
-  tmp_stream.str("");
-  tmp_stream << "/PartType" << parttype;
-  std::string parttype_str = tmp_stream.str();
-  auto file = H5::H5File(file_name, H5F_ACC_RDONLY );
-  auto group = H5::Group(file.openGroup(parttype_str));
-  auto dataset = H5::DataSet(group.openDataSet("Coordinates"));
-  auto dt = dataset.getDataType();
-  file.close();
-  if (dt.getSize() == 8) {
+  std::string block_name = "Coordinates";
+  auto dt_size = arepo::get_datatype_size(basedir, snapnum,
+      block_name, parttype);
+  if (dt_size == 8) {
     auto all_pos_double = arepo::read_block<DoubleArray<3>>(
         basedir, snapnum, "Coordinates", parttype);
     std::cout << "NOTE: converting coordinates from double to float...\n";
     all_pos = std::vector<Point>(all_pos_double.begin(),
         all_pos_double.end());
   }
-  else { // hopefully dt.getSize() == 4
+  else {
+    assert(dt_size == 4);
     all_pos = arepo::read_block<Point>(
         basedir, snapnum, "Coordinates", parttype);
   }
