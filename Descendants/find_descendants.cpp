@@ -1,7 +1,7 @@
 /** @file find_descendants.cpp
  * @brief Find subhalo descendants for a given range of snapshots.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 #include <fstream>

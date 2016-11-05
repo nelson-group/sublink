@@ -2,7 +2,7 @@
  * @brief For each particle with parttype=4 (mostly stars), determine if
  *        it was formed in-situ or ex-situ, along with other information.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 // Include some extra quantities from the merger trees:

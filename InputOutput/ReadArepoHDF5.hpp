@@ -24,7 +24,7 @@
  * }
  * @endcode
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 #include <iostream>

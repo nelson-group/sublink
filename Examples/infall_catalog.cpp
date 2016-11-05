@@ -2,7 +2,7 @@
  * @brief For each halo (FoF group), get information about all the objects
  *        that have ever "infalled" into it.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 // Include some extra quantities from the merger trees:

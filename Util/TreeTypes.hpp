@@ -2,7 +2,7 @@
 /** @file TreeTypes.hpp
  * @brief Define some common types used in many files.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 #include <array> // (C++11)

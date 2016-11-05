@@ -2,7 +2,7 @@
  * @brief For each galaxy from a given snapshot, estimate the ex situ fraction
  *        using the merger trees.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 // Include some extra quantities from the merger trees:

@@ -5,7 +5,7 @@
  * snapshot 60 iteratively and compares them with the RootDescendant
  * pointer included in the trees.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 // Include last_progenitor, main_leaf_progenitor, and root_descendant

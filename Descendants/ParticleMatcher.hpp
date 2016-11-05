@@ -2,7 +2,7 @@
 /** @file ParticleMatcher.hpp
  * @brief Define a class for matching particles across different snapshots.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 #include <iostream>
 #include <vector>

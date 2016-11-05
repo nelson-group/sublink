@@ -2,7 +2,7 @@
 /** @file TreesClasses.hpp
  * @brief Define classes for constructing SubLink merger trees.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 #include <iostream>

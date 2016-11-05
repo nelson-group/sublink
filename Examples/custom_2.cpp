@@ -2,7 +2,7 @@
  * @brief For a few galaxies, find all the times they underwent a merger
  *        with mass ratio > 1:4, and print the relevant Subfind IDs.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 // Include some extra quantities from the merger trees:

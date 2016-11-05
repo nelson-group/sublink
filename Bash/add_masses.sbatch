@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --mail-user=vrodriguez-gomez@cfa.harvard.edu
+#SBATCH --mail-user=vrg@jhu.edu
 #SBATCH --mail-type=ALL
 ##SBATCH --array=0-135%16
 #SBATCH -J add_L75n1820FP

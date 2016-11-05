@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --mail-user=vrodriguez-gomez@cfa.harvard.edu
+#SBATCH --mail-user=vrg@jhu.edu
 #SBATCH --mail-type=ALL
 #SBATCH -J gal_L75n910FP_part2
 #SBATCH -o gal_L75n910FP_part2.out

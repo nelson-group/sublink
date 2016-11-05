@@ -3,7 +3,7 @@
 /** @file GeneralHDF5.hpp
  * @brief General-purpose utilities to read from and write to HDF5 files.
  *
- * @author Vicente Rodriguez-Gomez (vrodriguez-gomez@cfa.harvard.edu)
+ * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
  */
 
 #include <vector>
