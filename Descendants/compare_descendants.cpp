@@ -6,6 +6,8 @@
  */
 
 #include <fstream>
+#include <sstream>
+#include <iostream>
 
 #include "../InputOutput/GeneralHDF5.hpp"
 #include "ParticleMatcher.hpp"
