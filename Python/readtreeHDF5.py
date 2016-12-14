@@ -126,7 +126,7 @@ class TreeDB:
             sys.exit()
 
         # Load file offsets
-        f = h5py.File('%s/offsets/offsets_000.hdf5' % (treedir))
+        f = h5py.File('%s/offsets/offsets_000.hdf5' % (treedir), 'r')
         self._file_offsets = f['FileOffsets'][:]
         f.close()
 
