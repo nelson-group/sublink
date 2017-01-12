@@ -49,7 +49,7 @@ int main(int argc, char** argv)
 
     // Find descendants and write to files
     auto pm = ParticleMatcher(basedir1, basedir2, snapnum1, snapnum2, tracking_scheme);
-    pm.write_to_file(writepath);
+    pm.write_to_file(writepath, false);
 
     // Print CPU and wall clock time
     std::cout << "Finished.\n";

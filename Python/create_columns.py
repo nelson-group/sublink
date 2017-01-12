@@ -138,14 +138,16 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
     # get info for all subhalo and FoF group quantities.
     # (Note that 'shape' is only used used to retrieve info about the second
     # dimension of the field, if any.)
+    snap_getfieldsfrom = snapnum_last
 
     #name = 'groups'
     name = 'fof_subhalo_tab'
     groupfilename = (basedir + '/groups_%s/%s_%s.0.hdf5' %
-                (str(snapnum_last).zfill(3), name, str(snapnum_last).zfill(3)))
+                (str(snap_getfieldsfrom).zfill(3), name, str(snap_getfieldsfrom).zfill(3)))
 
     f = h5py.File(groupfilename, 'r')
     subhalo_quantities = f['Subhalo'].keys()
+
     #group_quantities = ['Group_M_Crit200', 'Group_M_Mean200', 'Group_M_TopHat200']
     group_quantities = f['Group'].keys()
     field_name_list = subhalo_quantities + group_quantities

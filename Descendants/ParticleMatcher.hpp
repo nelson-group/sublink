@@ -132,8 +132,8 @@ public:
   /////////////////////////////
 
   /** @brief Write to an HDF5 file. */
-  void write_to_file(const std::string& writepath) const {
-    snap1_->write_to_file(writepath);
+  void write_to_file(const std::string& writepath, bool writemisc = true) const {
+    snap1_->write_to_file(writepath, writemisc);
   }
 
   ///////////////
@@ -316,7 +316,7 @@ public:
     }
 
     /** @brief Write to an HDF5 file. */
-    void write_to_file(const std::string& writepath) const {
+    void write_to_file(const std::string& writepath, bool writemisc) const {
       // Create filename
       std::stringstream tmp_stream;
       tmp_stream << writepath << "_" <<
@@ -327,9 +327,11 @@ public:
       std::cout << "Writing to file...\n";
       WallClock wall_clock;
       H5::H5File file(writefilename, H5F_ACC_TRUNC);
-      add_array(file, sub_len_, "SubhaloLen", H5::PredType::NATIVE_UINT32);
-      add_array(file, sub_mass_, "SubhaloMass", H5::PredType::NATIVE_FLOAT);
-      add_array(file, sub_grnr_, "SubhaloGrNr", H5::PredType::NATIVE_UINT32);
+      if (writemisc) {
+        add_array(file, sub_len_, "SubhaloLen", H5::PredType::NATIVE_UINT32);
+        add_array(file, sub_mass_, "SubhaloMass", H5::PredType::NATIVE_FLOAT);
+        add_array(file, sub_grnr_, "SubhaloGrNr", H5::PredType::NATIVE_UINT32);
+      }
       add_array(file, descendants_, "DescendantIndex", H5::PredType::NATIVE_INT32);
       add_array(file, first_scores_, "FirstScore", H5::PredType::NATIVE_FLOAT);
       add_array(file, second_scores_, "SecondScore", H5::PredType::NATIVE_FLOAT);
