@@ -82,8 +82,7 @@ public:
     // Additional fields from "extended" format.
 #ifdef COUNT_MERGERS
     FloatArray<6> SubhaloMassType;
-    real_type SubhaloSFR;
-    FloatArray<8> SubhaloStellarPhotometrics;
+    real_type Group_M_Crit200;
 #endif
 #ifdef INFALL_CATALOG
     FloatArray<3> GroupPos;
@@ -115,8 +114,7 @@ public:
 #ifdef COUNT_MERGERS
                ,
                FloatArray<6>& SubhaloMassType_,
-               real_type SubhaloSFR_,
-               FloatArray<8>& SubhaloStellarPhotometrics_
+               real_type Group_M_Crit200_
 #endif
 #ifdef INFALL_CATALOG
                ,
@@ -148,8 +146,7 @@ public:
 #ifdef COUNT_MERGERS
           ,
           SubhaloMassType(SubhaloMassType_),
-          SubhaloSFR(SubhaloSFR_),
-          SubhaloStellarPhotometrics(SubhaloStellarPhotometrics_)
+          Group_M_Crit200(Group_M_Crit200_)
 #endif
 #ifdef INFALL_CATALOG
           ,
@@ -604,8 +601,7 @@ private:
 
 #ifdef COUNT_MERGERS
     auto SubhaloMassType = read_dataset_by_filenum<FloatArray<6>>(treefilebase, filenum, "SubhaloMassType");
-    auto SubhaloSFR = read_dataset_by_filenum<real_type>(treefilebase, filenum, "SubhaloSFR");
-    auto SubhaloStellarPhotometrics = read_dataset_by_filenum<FloatArray<8>>(treefilebase, filenum, "SubhaloStellarPhotometrics");
+    auto Group_M_Crit200 = read_dataset_by_filenum<real_type>(treefilebase, filenum, "Group_M_Crit200");
 #endif
 #ifdef INFALL_CATALOG
     auto GroupPos = read_dataset_by_filenum<FloatArray<3>>(treefilebase, filenum, "GroupPos");
@@ -645,8 +641,7 @@ private:
 #ifdef COUNT_MERGERS
               ,
               SubhaloMassType[rownum],
-              SubhaloSFR[rownum],
-              SubhaloStellarPhotometrics[rownum]
+              Group_M_Crit200[rownum]
 #endif
 #ifdef INFALL_CATALOG
               ,

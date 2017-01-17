@@ -19,11 +19,89 @@
 #include "../Util/GeneralUtil.hpp"
 #include "../Util/TreeUtil.hpp"
 
+/** @brief Datatype to store merger info. */
+struct MergerInfo{
+  // Descendant properties.
+  real_type mstar_0;
+  real_type m200_0;
+  real_type delta_0;
+  int8_t is_central_0;
+
+  // Progenitor properties right before merger.
+  real_type mstar_instant_1;
+  real_type mstar_instant_2;
+
+  // Progenitor properties at stellar tmax.
+  real_type mstar_stmax_1;
+  real_type mstar_stmax_2;
+  snapnum_type snapnum_stmax;
+
+  // Progenitor properties at infall.
+  real_type mstar_infall_1;
+  real_type mstar_infall_2;
+  snapnum_type snapnum_infall;
+
+  /** Constructor. */
+  MergerInfo(
+      real_type mstar_0_,
+      real_type m200_0_,
+      real_type delta_0_,
+      int8_t is_central_0_,
+      real_type mstar_instant_1_,
+      real_type mstar_instant_2_,
+      real_type mstar_stmax_1_,
+      real_type mstar_stmax_2_,
+      snapnum_type snapnum_stmax_,
+      real_type mstar_infall_1_,
+      real_type mstar_infall_2_,
+      snapnum_type snapnum_infall_)
+      : mstar_0(mstar_0_),
+        m200_0(m200_0_),
+        delta_0(delta_0_),
+        is_central_0(is_central_0_),
+        mstar_instant_1(mstar_instant_1_),
+        mstar_instant_2(mstar_instant_2_),
+        mstar_stmax_1(mstar_stmax_1_),
+        mstar_stmax_2(mstar_stmax_2_),
+        snapnum_stmax(snapnum_stmax_),
+        mstar_infall_1(mstar_infall_1_),
+        mstar_infall_2(mstar_infall_2_),
+        snapnum_infall(snapnum_infall_) {
+  }
+
+  /** Disable default constructor. */
+  MergerInfo() = delete;
+};
+
+/** @brief Corresponding HDF5 datatype. */
+static H5::CompType H5MergerInfo() {
+  H5::CompType mtype(sizeof(MergerInfo));
+  // Descendant properties
+  mtype.insertMember("mstar_0", HOFFSET(MergerInfo, mstar_0), H5::PredType::NATIVE_FLOAT);
+  mtype.insertMember("m200_0", HOFFSET(MergerInfo, m200_0), H5::PredType::NATIVE_FLOAT);
+  mtype.insertMember("delta_0", HOFFSET(MergerInfo, delta_0), H5::PredType::NATIVE_FLOAT);
+  // Although 1 byte is enough, this entry might occupy 8 bytes:
+  mtype.insertMember("is_central_0", HOFFSET(MergerInfo, is_central_0), H5::PredType::NATIVE_INT8);
+  // Progenitor properties right before merger
+  mtype.insertMember("mstar_instant_1", HOFFSET(MergerInfo, mstar_instant_1), H5::PredType::NATIVE_FLOAT);
+  mtype.insertMember("mstar_instant_2", HOFFSET(MergerInfo, mstar_instant_2), H5::PredType::NATIVE_FLOAT);
+  // Progenitor properties at stellar tmax
+  mtype.insertMember("mstar_stmax_1", HOFFSET(MergerInfo, mstar_stmax_1), H5::PredType::NATIVE_FLOAT);
+  mtype.insertMember("mstar_stmax_2", HOFFSET(MergerInfo, mstar_stmax_2), H5::PredType::NATIVE_FLOAT);
+  mtype.insertMember("snapnum_stmax", HOFFSET(MergerInfo, snapnum_stmax), H5::PredType::NATIVE_INT16);
+  // Progenitor properties at infall
+  mtype.insertMember("mstar_infall_1", HOFFSET(MergerInfo, mstar_infall_1), H5::PredType::NATIVE_FLOAT);
+  mtype.insertMember("mstar_infall_2", HOFFSET(MergerInfo, mstar_infall_2), H5::PredType::NATIVE_FLOAT);
+  mtype.insertMember("snapnum_infall", HOFFSET(MergerInfo, snapnum_infall), H5::PredType::NATIVE_INT16);
+  return mtype;
+}
+
+
 /** @brief Count mergers for a given subhalo and print data to file.
  * @param[in] sub The subhalo of interest.
  * @param[in] writefile An open file to write the results.
  */
-void count_mergers_sub(Subhalo sub, std::ofstream& writefile,
+void count_mergers_sub(Subhalo sub, std::vector<MergerInfo>& merger_info,
     const std::vector<std::vector<real_type>>& overdensities) {
   // Only proceed if @a sub has at least one progenitor.
   auto first_prog = sub.first_progenitor();
@@ -35,110 +113,49 @@ void count_mergers_sub(Subhalo sub, std::ofstream& writefile,
       next_prog.is_valid(); next_prog = next_prog.next_progenitor()) {
 
     // Descendant properties.
-    auto is_central = static_cast<int>(sub.data().FirstSubhaloInFOFGroupID == sub.data().SubhaloID);
-    writefile << std::setprecision(10) <<
-        sub.data().SubhaloMassType[4] << "," <<
-        sub.data().Mass << "," <<
-        sub.data().SubhaloSFR << "," <<
-        sub.data().SubhaloStellarPhotometrics[4] - sub.data().SubhaloStellarPhotometrics[5] << "," <<
-        overdensities[sub.data().SnapNum][sub.data().SubfindID] << "," <<
-        is_central << ",";
+    real_type mstar_0 = sub.data().SubhaloMassType[4];
+    real_type m200_0 = sub.data().Group_M_Crit200;
+    real_type delta_0 = overdensities[sub.data().SnapNum][sub.data().SubfindID];
+    auto is_central_0 = static_cast<int8_t>(sub.data().FirstSubhaloInFOFGroupID == sub.data().SubhaloID);
 
     // Progenitor properties right before merger.
-    writefile << std::setprecision(10) <<
-        first_prog.data().SubhaloMassType[4] << "," <<
-        first_prog.data().Mass << "," <<
-        first_prog.data().SubhaloSFR << "," <<
-        first_prog.data().SubhaloStellarPhotometrics[4] - first_prog.data().SubhaloStellarPhotometrics[5] << "," <<
-        overdensities[first_prog.data().SnapNum][first_prog.data().SubfindID] << "," <<
-        next_prog.data().SubhaloMassType[4] << "," <<
-        next_prog.data().Mass << "," <<
-        next_prog.data().SubhaloSFR << "," <<
-        next_prog.data().SubhaloStellarPhotometrics[4] - next_prog.data().SubhaloStellarPhotometrics[5] << "," <<
-        overdensities[next_prog.data().SnapNum][next_prog.data().SubfindID] << ",";
+    real_type mstar_instant_1 = first_prog.data().SubhaloMassType[4];
+    real_type mstar_instant_2 = next_prog.data().SubhaloMassType[4];
 
     // Progenitor properties at stellar tmax.
     real_type mstar_stmax_1 = -1;
-    real_type mgal_stmax_1 = -1;
-    real_type sfr_stmax_1 = -1;
-    real_type g_minus_r_stmax_1 = -1;
-    real_type overdensity_stmax_1 = -1;
     real_type mstar_stmax_2 = -1;
-    real_type mgal_stmax_2 = -1;
-    real_type sfr_stmax_2 = -1;
-    real_type g_minus_r_stmax_2 = -1;
-    real_type overdensity_stmax_2 = -1;
     snapnum_type snapnum_stmax = -1;
     auto stmax_pair = get_stmax_pair(first_prog, next_prog);
     if (stmax_pair.first.is_valid()) {
       mstar_stmax_1 = stmax_pair.first.data().SubhaloMassType[4];
-      mgal_stmax_1 = stmax_pair.first.data().Mass;
-      sfr_stmax_1 = stmax_pair.first.data().SubhaloSFR;
-      g_minus_r_stmax_1 = stmax_pair.first.data().SubhaloStellarPhotometrics[4] - stmax_pair.first.data().SubhaloStellarPhotometrics[5];
-      overdensity_stmax_1 = overdensities[stmax_pair.first.data().SnapNum][stmax_pair.first.data().SubfindID];
       mstar_stmax_2 = stmax_pair.second.data().SubhaloMassType[4];
-      mgal_stmax_2 = stmax_pair.second.data().Mass;
-      sfr_stmax_2 = stmax_pair.second.data().SubhaloSFR;
-      g_minus_r_stmax_2 = stmax_pair.second.data().SubhaloStellarPhotometrics[4] - stmax_pair.second.data().SubhaloStellarPhotometrics[5];
-      overdensity_stmax_2 = overdensities[stmax_pair.second.data().SnapNum][stmax_pair.second.data().SubfindID];
       snapnum_stmax = stmax_pair.second.data().SnapNum;
     }
-    writefile << std::setprecision(10) <<
-        mstar_stmax_1 << "," <<
-        mgal_stmax_1 << "," <<
-        sfr_stmax_1 << "," <<
-        g_minus_r_stmax_1 << "," <<
-        overdensity_stmax_1 << "," <<
-        mstar_stmax_2 << "," <<
-        mgal_stmax_2 << "," <<
-        sfr_stmax_2 << "," <<
-        g_minus_r_stmax_2 << "," <<
-        overdensity_stmax_2 << "," <<
-        snapnum_stmax << ",";
 
     // Progenitor properties at infall.
     real_type mstar_infall_1 = -1;
-    real_type mgal_infall_1 = -1;
-    real_type sfr_infall_1 = -1;
-    real_type g_minus_r_infall_1 = -1;
-    real_type overdensity_infall_1 = -1;
     real_type mstar_infall_2 = -1;
-    real_type mgal_infall_2 = -1;
-    real_type sfr_infall_2 = -1;
-    real_type g_minus_r_infall_2 = -1;
-    real_type overdensity_infall_2 = -1;
     snapnum_type snapnum_infall = -1;
     auto infall_pair = get_infall_pair(first_prog, next_prog);
     if (infall_pair.first.is_valid()) {
       mstar_infall_1 = infall_pair.first.data().SubhaloMassType[4];
-      mgal_infall_1 = infall_pair.first.data().Mass;
-      sfr_infall_1 = infall_pair.first.data().SubhaloSFR;
-      g_minus_r_infall_1 = infall_pair.first.data().SubhaloStellarPhotometrics[4] - infall_pair.first.data().SubhaloStellarPhotometrics[5];
-      overdensity_infall_1 = overdensities[infall_pair.first.data().SnapNum][infall_pair.first.data().SubfindID];
       mstar_infall_2 = infall_pair.second.data().SubhaloMassType[4];
-      mgal_infall_2 = infall_pair.second.data().Mass;
-      sfr_infall_2 = infall_pair.second.data().SubhaloSFR;
-      g_minus_r_infall_2 = infall_pair.second.data().SubhaloStellarPhotometrics[4] - infall_pair.second.data().SubhaloStellarPhotometrics[5];
-      overdensity_infall_2 = overdensities[infall_pair.second.data().SnapNum][infall_pair.second.data().SubfindID];
       snapnum_infall = infall_pair.second.data().SnapNum;
     }
-    writefile << std::setprecision(10) <<
-        mstar_infall_1 << "," <<
-        mgal_infall_1 << "," <<
-        sfr_infall_1 << "," <<
-        g_minus_r_infall_1 << "," <<
-        overdensity_infall_1 << "," <<
-        mstar_infall_2 << "," <<
-        mgal_infall_2 << "," <<
-        sfr_infall_2 << "," <<
-        g_minus_r_infall_2 << "," <<
-        overdensity_infall_2 << "," <<
-        snapnum_infall << "\n";
+
+    // Add to data structure
+    auto cur_merger_info = MergerInfo(mstar_0, m200_0, delta_0, is_central_0,
+        mstar_instant_1, mstar_instant_2, mstar_stmax_1, mstar_stmax_2, snapnum_stmax,
+        mstar_infall_1, mstar_infall_2, snapnum_infall);
+
+    merger_info.push_back(cur_merger_info);
   }
 }
 
 /** @brief Count mergers and print to files. */
-void count_mergers_all(const std::string& simdir, const std::string& treedir,
+void count_mergers_all(const std::string& simdir,
+    const std::string& envdir, const std::string& treedir,
     const std::string& writepath, const snapnum_type snapnum_first,
     const snapnum_type snapnum_last) {
 
@@ -154,20 +171,29 @@ void count_mergers_all(const std::string& simdir, const std::string& treedir,
     if (nsubs == 0)
       continue;
 
-    // Create filename
+    // Environment filename
     std::stringstream tmp_stream;
-    tmp_stream << simdir << "/postprocessing/environment/environment_" <<
+    tmp_stream << envdir << "/environment_" <<
         std::setfill('0') << std::setw(3) << snapnum << ".hdf5";
     std::string filename = tmp_stream.str();
 
-    // Quickly check if file exists
+    // Only proceed if file exists
     std::ifstream file(filename);
     if (!file) {
-      // No overdensities to read. Fill array with -1001's
-      overdensities[snapnum].resize(nsubs, -1001);
+      // No overdensities to read. Fill array with -999's
+      overdensities[snapnum].resize(nsubs, -999);
       continue;
     }
     file.close();
+
+    // If file is empty, fill array with -999's
+    auto h5file = H5::H5File(filename, H5F_ACC_RDONLY);
+    if (!H5Lexists(h5file.getId(), "delta", H5P_DEFAULT)) {
+      h5file.close();
+      overdensities[snapnum].resize(nsubs, -999);
+      continue;
+    }
+    h5file.close();
 
     // Read overdensities
     overdensities[snapnum] = read_dataset<real_type>(filename, "delta");
@@ -190,27 +216,25 @@ void count_mergers_all(const std::string& simdir, const std::string& treedir,
   for (auto snapnum = snapnum_first; snapnum <= snapnum_last; ++snapnum) {
     auto snap = tree.snapshot(snapnum);
 
-    // Filename for this snapshot.
-    std::stringstream tmp_stream;
-    tmp_stream << writepath << "_" <<
-        std::setfill('0') << std::setw(3) << snapnum;
-    std::string writefilename = tmp_stream.str();
-
-    // Open file and make sure it's open.
-    std::ofstream writefile(writefilename.data());
-    if (!writefile.is_open()) {
-      std::cerr << "Error: Unable to open file " << writefilename << '\n';
-      continue;
-    }
+    // Store merger info here
+    std::vector<MergerInfo> merger_info;
 
     // Iterate over subhalos and count mergers.
     for (auto sub_it = snap.begin(); sub_it != snap.end(); ++sub_it) {
-      count_mergers_sub(*sub_it, writefile, overdensities);
+      count_mergers_sub(*sub_it, merger_info, overdensities);
     }
 
-    // Flush and close file
-    writefile.flush();
+    // Filename for this snapshot.
+    std::stringstream tmp_stream;
+    tmp_stream << writepath << "_" <<
+        std::setfill('0') << std::setw(3) << snapnum << ".hdf5";
+    std::string writefilename = tmp_stream.str();
+
+    // Write to HDF5 file.
+    H5::H5File writefile(writefilename, H5F_ACC_TRUNC);
+    add_array(writefile, merger_info, "Mergers", H5MergerInfo());
     writefile.close();
+
     std::cout << "Finished for snapshot " << snapnum << std::endl;
   }
 }
@@ -219,25 +243,26 @@ void count_mergers_all(const std::string& simdir, const std::string& treedir,
 int main(int argc, char** argv)
 {
   // Check input arguments
-  if (argc != 6) {
-    std::cerr << "Usage: " << argv[0] << " simdir treedir writepath" <<
+  if (argc != 7) {
+    std::cerr << "Usage: " << argv[0] << " simdir envdir treedir writepath" <<
         " snapnum_first snapnum_last\n";
     exit(1);
   }
 
   // Read input
   std::string simdir(argv[1]);
-  std::string treedir(argv[2]);
-  std::string writepath(argv[3]);
-  snapnum_type snapnum_first = atoi(argv[4]);
-  snapnum_type snapnum_last = atoi(argv[5]);
+  std::string envdir(argv[2]);
+  std::string treedir(argv[3]);
+  std::string writepath(argv[4]);
+  snapnum_type snapnum_first = atoi(argv[5]);
+  snapnum_type snapnum_last = atoi(argv[6]);
 
   // Measure CPU and wall clock (real) time
   WallClock wall_clock;
   CPUClock cpu_clock;
 
   // Do stuff
-  count_mergers_all(simdir, treedir, writepath, snapnum_first, snapnum_last);
+  count_mergers_all(simdir, envdir, treedir, writepath, snapnum_first, snapnum_last);
 
   // Print wall clock time and speedup
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";
