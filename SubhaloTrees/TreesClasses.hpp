@@ -376,6 +376,8 @@ private:
         }
         cur_prog->descendant_ = cur_desc;
 
+        assert(cur_desc != nullptr);
+
         // The progenitors of a subhalo are ordered by their mass history.
         // Put cur_sub in its proper "place."
         if (cur_prog->mass_history > cur_desc->mass_history) {

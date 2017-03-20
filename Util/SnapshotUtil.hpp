@@ -30,7 +30,7 @@ static constexpr real_type H0_Gyr = H0 * (1e9*365.25*86400);  // in Gyr^-1
  * In this context, the subhalo offset is the index of the
  * first particle of a given type that belongs to each subhalo.
  */
-std::vector<uint32_t> calculate_subhalo_offsets(const std::string& basedir,
+std::vector<uint64_t> calculate_subhalo_offsets(const std::string& basedir,
     const snapnum_type snapnum, const int parttype) {
 
   // Load some FoF group and subhalo info
@@ -44,8 +44,8 @@ std::vector<uint32_t> calculate_subhalo_offsets(const std::string& basedir,
       "GroupLenType", parttype);
   auto sub_len = subfind::read_block<uint32_t>(basedir, snapnum, "Subhalo",
       "SubhaloLenType", parttype);
-  std::vector<uint32_t> group_offset(ngroups, 0);
-  std::vector<uint32_t> sub_offset(nsubs, 0);
+  std::vector<uint64_t> group_offset(ngroups, 0);
+  std::vector<uint64_t> sub_offset(nsubs, 0);
 
   // Calculate offsets
   uint32_t k = 0;
@@ -62,6 +62,8 @@ std::vector<uint32_t> calculate_subhalo_offsets(const std::string& basedir,
     }
   }
   assert(k == nsubs);
+  for (uint32_t k = 1; k < nsubs; k++)
+    assert(sub_offset[k] >= sub_offset[k-1]);
 
   return sub_offset;
 }

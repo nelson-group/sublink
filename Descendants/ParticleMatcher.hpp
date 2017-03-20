@@ -211,7 +211,7 @@ public:
       auto nsubs = subfind::get_scalar_attribute<uint32_t>(
           basedir_, snapnum_, "Nsubgroups_Total");
       std::vector<std::vector<uint32_t>> sub_len_parttype;
-      std::vector<std::vector<uint32_t>> sub_offset_parttype;
+      std::vector<std::vector<uint64_t>> sub_offset_parttype;
       for (unsigned l = 0; l < num_parttypes; ++l) {
         sub_len_parttype.push_back(subfind::read_block<uint32_t>(
             basedir_, snapnum_, "Subhalo", "SubhaloLenType", parttypes[l]));
@@ -384,12 +384,19 @@ private:
       // Add to score of current descendant candidate
       index_type sub_index1 = data_it->sub_index;  // progenitor
       index_type sub_index2 = (data_it+1)->sub_index;  // candidate
+
       auto& cur_cands = scores[sub_index1];
       auto it = std::find(cur_cands.begin(), cur_cands.end(), sub_index2);
       if (it == cur_cands.end())
         cur_cands.emplace_back(sub_index2, data_it->weight);
       else
         it->add_to_score(data_it->weight);
+
+      // Sanity checks
+      assert(sub_index1 < (int)snap1_->nsubs());
+      assert(sub_index2 < (int)snap2_->nsubs());
+      if(data_it+1 != data_.end())
+        assert( (data_it+1)->id != (data_it+2)->id );
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
