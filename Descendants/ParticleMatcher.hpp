@@ -15,6 +15,7 @@
 #include <algorithm>  // find, stable_sort
 #ifdef USE_OPENMP
 #include <parallel/algorithm>  // parallel stable_sort
+#include "../Util/HybridSort.hpp"  // "hybrid" sort
 #endif
 
 #include "../InputOutput/ReadArepoHDF5.hpp"
@@ -361,7 +362,8 @@ private:
     WallClock wall_clock;
     CPUClock cpu_clock;
 #ifdef USE_OPENMP
-    __gnu_parallel::stable_sort(data_.begin(), data_.end(), compareByID);
+//    __gnu_parallel::stable_sort(data_.begin(), data_.end(), compareByID);
+    hybrid_sort(data_.begin(), data_.end(), compareByID);
 #else
     std::stable_sort(data_.begin(), data_.end(), compareByID);
 #endif
