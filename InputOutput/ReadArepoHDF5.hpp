@@ -166,6 +166,7 @@ std::size_t get_datatype_size(const std::string& basedir,
  * @param[in] file_name Path to the input file.
  * @param[in] block_name Name of the dataset.
  * @param[in] parttype The particle type.
+ * @param[in] read_num If nonzero, read -at most- this many elements.
  * @return A vector with the dataset values.
  *
  * @note The return value is a vector (with an appropriately chosen type).
@@ -174,7 +175,7 @@ std::size_t get_datatype_size(const std::string& basedir,
  */
 template <typename T>
 std::vector<T> read_block_single_file(const std::string& file_name,
-    const std::string& block_name, const int parttype) {
+    const std::string& block_name, const int parttype, const uint64_t read_num = 0) {
 
   // Create group name corresponding to particle type.
   std::stringstream ss;
@@ -199,6 +200,15 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   const unsigned int file_rank = file_space.getSimpleExtentNdims();
   hsize_t file_dims[file_rank];
   file_space.getSimpleExtentDims(file_dims, NULL);
+
+  // If read_num != 0, then partial read only, of -at most- this number of (1D) elements
+  if ((read_num > 0) & (read_num < file_dims[0])) {
+    assert(file_rank == 1);
+    file_dims[0] = read_num;
+    hsize_t count[1] = {read_num};
+    hsize_t offset[1] = {0};
+    file_space.selectHyperslab( H5S_SELECT_SET, count, offset );
+  }
 
   // Check that datatype sizes match (necessary but not sufficient)
   auto dt = dataset.getDataType();
@@ -233,6 +243,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
  * @param[in] snapnum Snapshot number.
  * @param[in] block_name Name of the dataset.
  * @param[in] parttype The particle type.
+ * @param[in] read_num If nonzero, only read this many total elements (1D).
  * @return A vector with the dataset values.
  *
  * @note The return value is a vector (with an appropriately chosen type).
@@ -243,7 +254,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
 template <typename T>
 std::vector<T> read_block(const std::string& basedir,
     const int16_t snapnum, const std::string& block_name,
-    const int parttype) {
+    const int parttype, const uint64_t read_num = 0) {
 
   // Snapshot filename without the file number
   std::stringstream tmp_stream;
@@ -265,8 +276,11 @@ std::vector<T> read_block(const std::string& basedir,
   part_id_type npart_total = (int64_t)npart_total_vect_lowword[parttype] | 
                              ((int64_t)npart_total_vect_highword[parttype] << 32);
 
-  // Allocate memory for output vector (npart_total is actually
-  // a lower bound; see comments above)
+  // Modify to selective global read
+  if(read_num > 0)
+    npart_total = read_num;
+
+  // Allocate memory for output vector
   std::vector<T> data_total;
   data_total.reserve(npart_total);
 
@@ -277,22 +291,26 @@ std::vector<T> read_block(const std::string& basedir,
     sstream.str("");
     sstream << file_name_base << "." << filenum << ".hdf5";
     file_name = sstream.str();
-    auto data_thisfile = read_block_single_file<T>(file_name, block_name, parttype);
+    auto data_thisfile = read_block_single_file<T>(file_name, block_name, parttype, npart_total);
 
     // Get number of particles according to file header (just to check)
     auto npart_thisfile_vect = get_vector_attribute<int32_t>(file_name,
         "NumPart_ThisFile");
     part_id_type npart_thisfile = npart_thisfile_vect[parttype];
-    if (data_thisfile.size() != npart_thisfile)
+    if ((data_thisfile.size() != npart_thisfile) & (read_num == 0))
       std::cerr << "BAD: number of particles in file " << filenum <<
         " does not match with header.\n";
 
     // Concatenate vectors.
     data_total.insert(data_total.end(), data_thisfile.begin(), data_thisfile.end());
+
+    npart_total -= data_thisfile.size(); // number left to read
+    if(npart_total == 0)
+      break;
   }
 
   // Check total number of particles with header.
-  if (data_total.size() != npart_total)
+  if ((data_total.size() != npart_total) & (npart_total > 0))
     std::cerr << "BAD: total number of particles does not match with header ["
               << data_total.size() << " vs " << npart_total << "].\n";
 

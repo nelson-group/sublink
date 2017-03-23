@@ -248,8 +248,10 @@ public:
         // Load particle IDs
         std::cout << "Loading particle IDs...\n";
         wall_clock.start();
+        uint64_t nread = sub_offset_parttype[l][nsubs] + 1;
+
         auto part_id = arepo::read_block<part_id_type>(
-                  basedir_, snapnum_, "ParticleIDs", parttypes[l]);
+                  basedir_, snapnum_, "ParticleIDs", parttypes[l], nread);
         std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
         // Associate particles with subhalos
@@ -269,9 +271,9 @@ public:
         }
         else if (parttypes[l] == 0) {  // gas
           auto part_mass = arepo::read_block<real_type>(
-                      basedir_, snapnum_, "Masses", parttypes[l]);
+                      basedir_, snapnum_, "Masses", parttypes[l], nread);
           auto part_sfr = arepo::read_block<real_type>(
-                      basedir_, snapnum_, "StarFormationRate", parttypes[l]);
+                      basedir_, snapnum_, "StarFormationRate", parttypes[l], nread);
           for (uint32_t sub_uindex = 0; sub_uindex < nsubs; ++sub_uindex) {
             part_id_type snap_count = sub_offset_parttype[l][sub_uindex];
             for (uint32_t i = 0; i < sub_len_parttype[l][sub_uindex]; ++i) {
@@ -291,7 +293,7 @@ public:
         }
         else if (parttypes[l] == 4) {  // stars
           auto part_mass = arepo::read_block<real_type>(
-                      basedir_, snapnum_, "Masses", parttypes[l]);
+                      basedir_, snapnum_, "Masses", parttypes[l], nread);
           for (uint32_t sub_uindex = 0; sub_uindex < nsubs; ++sub_uindex) {
             part_id_type snap_count = sub_offset_parttype[l][sub_uindex];
             for (uint32_t i = 0; i < sub_len_parttype[l][sub_uindex]; ++i) {
@@ -397,8 +399,10 @@ private:
       // Sanity checks
       assert(sub_index1 < (int)snap1_->nsubs());
       assert(sub_index2 < (int)snap2_->nsubs());
-      if(data_it+1 != data_.end())
-        assert( (data_it+1)->id != (data_it+2)->id );
+      if ( (data_it+1)->id == (data_it+2)->id )
+        std::cout << "WARNING DUPLICATE ID: it+1 id=" << (data_it+1)->id << " sub=" << (data_it+1)->sub_index 
+                  << " it+2 id=" << (data_it+2)->id << " sub=" << (data_it+2)->sub_index << std::endl;
+        //assert( (data_it+1)->id != (data_it+2)->id ); // not true for L75n1820TNG due to duplicate PT4 IDs
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 

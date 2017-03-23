@@ -111,7 +111,11 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   }
   else if (parttype >= 0) {
     auto dt = dataset.getDataType();
-    assert(sizeof(T) == dt.getSize());
+    if (dt.getSize() != sizeof(T)) {
+      std::cerr << "ERROR: mismatched datatype sizes (" << dt.getSize() <<
+          " vs " << sizeof(T) << ") when reading " << block_name << " [" << parttype << "].\n";
+      assert(false);
+    }
   }
 
   // If parttype != -1, we are only interested in a single column.
