@@ -202,7 +202,7 @@ std::vector<T> read_block_single_file(const std::string& file_name,
   file_space.getSimpleExtentDims(file_dims, NULL);
 
   // If read_num != 0, then partial read only, of -at most- this number of (1D) elements
-  if ((read_num > 0) & (read_num < file_dims[0])) {
+  if ((read_num > 0) && (read_num < file_dims[0])) {
     assert(file_rank == 1);
     file_dims[0] = read_num;
     hsize_t count[1] = {read_num};
@@ -297,7 +297,7 @@ std::vector<T> read_block(const std::string& basedir,
     auto npart_thisfile_vect = get_vector_attribute<int32_t>(file_name,
         "NumPart_ThisFile");
     part_id_type npart_thisfile = npart_thisfile_vect[parttype];
-    if ((data_thisfile.size() != npart_thisfile) & (read_num == 0))
+    if ((data_thisfile.size() != npart_thisfile) && (read_num == 0))
       std::cerr << "BAD: number of particles in file " << filenum <<
         " does not match with header.\n";
 
@@ -310,7 +310,7 @@ std::vector<T> read_block(const std::string& basedir,
   }
 
   // Check total number of particles with header.
-  if ((data_total.size() != npart_total) & (npart_total > 0))
+  if ((data_total.size() != npart_total) && (npart_total > 0))
     std::cerr << "BAD: total number of particles does not match with header ["
               << data_total.size() << " vs " << npart_total << "].\n";
 

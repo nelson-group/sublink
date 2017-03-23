@@ -45,7 +45,7 @@ std::vector<uint64_t> calculate_subhalo_offsets(const std::string& basedir,
   auto sub_len = subfind::read_block<uint32_t>(basedir, snapnum, "Subhalo",
       "SubhaloLenType", parttype);
   std::vector<uint64_t> group_offset(ngroups, 0);
-  std::vector<uint64_t> sub_offset(nsubs+1, 0);
+  std::vector<uint64_t> sub_offset(nsubs, 0);
 
   // Calculate offsets
   uint32_t k = 0;
@@ -62,7 +62,6 @@ std::vector<uint64_t> calculate_subhalo_offsets(const std::string& basedir,
     }
   }
   assert(k == nsubs);
-  sub_offset[nsubs] = sub_offset[nsubs-1] + sub_len[nsubs-1]; // == sum(SubhaloLenType[*,partType]
   for (uint32_t k = 1; k < nsubs; k++)
     assert(sub_offset[k] >= sub_offset[k-1]);
 

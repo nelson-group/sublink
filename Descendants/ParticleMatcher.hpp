@@ -248,7 +248,7 @@ public:
         // Load particle IDs
         std::cout << "Loading particle IDs...\n";
         wall_clock.start();
-        uint64_t nread = sub_offset_parttype[l][nsubs] + 1;
+        uint64_t nread = sub_offset_parttype[l][nsubs-1] + sub_len_parttype[l][nsubs-1];
 
         auto part_id = arepo::read_block<part_id_type>(
                   basedir_, snapnum_, "ParticleIDs", parttypes[l], nread);
@@ -364,8 +364,8 @@ private:
     WallClock wall_clock;
     CPUClock cpu_clock;
 #ifdef USE_OPENMP
-//    __gnu_parallel::stable_sort(data_.begin(), data_.end(), compareByID);
-    hybrid_sort(data_.begin(), data_.end(), compareByID);
+    //hybrid_sort(data_.begin(), data_.end(), compareByID);
+    __gnu_parallel::stable_sort(data_.begin(), data_.end(), compareByID);
 #else
     std::stable_sort(data_.begin(), data_.end(), compareByID);
 #endif
