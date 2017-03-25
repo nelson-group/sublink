@@ -201,7 +201,7 @@ void update_stars(std::vector<ParticleInfo>& cur_stars,
   std::stable_sort(stars_aux.begin(), stars_aux.end(), compareByID);
 #endif
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";
-  std::cout << "Speedup: " << cpu_clock.seconds()/wall_clock.seconds() << ".\n";
+  std::cout << "CPU/Wall Time Ratio: " << cpu_clock.seconds()/wall_clock.seconds() << ".\n";
 
   // Iterate over particles and add info to cur_stars.
   std::cout << "Dealing with particle coincidences...\n";
@@ -382,7 +382,9 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
 
     // Iterate over stellar particles
     wall_clock.start();
+    CPUClock cpu_clock;
     std::cout << "Iterating over stellar particles...\n";
+#pragma omp parallel for
     for (uint64_t pos = 0; pos < nparts; ++pos) {
       // Get formation info of current particle.
       auto it = std::lower_bound(cur_stars.begin(), cur_stars.end(),
@@ -438,6 +440,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
       }
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
+    std::cout << "CPU/Wall Time Ratio: " << cpu_clock.seconds()/wall_clock.seconds() << ".\n";
 
     // Write to file.
     wall_clock.start();
