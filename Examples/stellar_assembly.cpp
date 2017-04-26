@@ -76,7 +76,7 @@ bool compareByID(const ParticleInfo& a, const ParticleInfo& b) {
 std::vector<real_type> get_galactocentric_distances(
     const std::string& basedir, const snapnum_type snapnum,
     const std::vector<index_type>& SubfindID,
-    const std::vector<uint32_t>& sub_offset) {
+    const std::vector<uint64_t>& sub_offset) {
 
   uint64_t nparts = SubfindID.size();
 
