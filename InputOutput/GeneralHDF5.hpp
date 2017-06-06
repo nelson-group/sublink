@@ -265,7 +265,8 @@ void add_array_2d(H5::H5File& file, const std::vector<T>& array,
   // Define (two-dimensional) dataspace
   hsize_t dimsf[2];  // dataset dimensions
   dimsf[0] = array.size();
-  dimsf[1] = T::size();  // e.g., FloatArray<6>::size() == 6
+  dimsf[1] = sizeof(T) / sizeof(typename T::value_type);
+
   H5::DataSpace dataspace(2, dimsf);  // rank == 2
 
   // Create dataset
