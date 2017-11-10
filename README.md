@@ -43,8 +43,15 @@ Briefly, the code is organized into the following directories:
 * HDF5
 * OpenMP (optional)
 
+### Citing ###
+
+If you use this code in a scientific publication, you should consider citing the following articles:
+
+* [Rodriguez-Gomez et al. (2015)](http://adsabs.harvard.edu/abs/2015MNRAS.449...49R): Description of the algorithm.
+* [Nelson et al. (2015)](http://adsabs.harvard.edu/abs/2015A%26C....13...12N): Description of the data format.
+
 ### Authors ###
-* Vicente Rodriguez-Gomez (vrodriguez-gomez [at] cfa.harvard.edu)
+* Vicente Rodriguez-Gomez (vrg [at] jhu.edu)
 
 ### Contributors ###
 * Dylan Nelson
@@ -53,3 +60,7 @@ Briefly, the code is organized into the following directories:
 
 * Some ideas were taken from Shy Genel's halo merger tree code.
 * Some code was developed during the course "Systems Development for Computational Science," taught at Harvard by Cris Cecka.
+
+### Licensing ###
+
+Licensed under a 3-Clause BSD License.
