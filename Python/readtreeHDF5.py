@@ -161,7 +161,7 @@ class TreeDB:
         """
         if filenum not in self._tree_files.keys():
             self._tree_files[filenum] = h5py.File(
-                '%s/tree_extended.%d.hdf5' % (self._treedir, filenum), 'r')
+                '%s/%s.%d.hdf5' % (self._treedir, self._name, filenum), 'r')
         return self._tree_files[filenum]
 
     def _get_offset_file(self, snapnum):
