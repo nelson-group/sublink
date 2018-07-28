@@ -29,7 +29,7 @@ def add_masses(snapnum, in_rad):
     print('Loading info from assembly file...')
     f = h5py.File('%s/stars_%s.hdf5' % (assemblydir, str(snapnum).zfill(3)), 'r')
     # Only proceed if file is non-empty
-    if len(f.keys()) == 0:
+    if len(list(f.keys())) == 0:
         print("No stellar particles in snapshot %d. Skipping..." % (snapnum))
         f.close()
         f_write.close()

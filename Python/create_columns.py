@@ -46,7 +46,7 @@ def read_block(basedir, snapnum, field_name, group_name):
         # only proceed if file is not corrupt:
         try:
             # Open file
-            f = h5py.File(filename, 'r')
+            f = h5py.File(filename, mode='r')
         except:
             print('Corrupt file:', filename)
             print('Skipping...')
@@ -124,7 +124,7 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
     filename = treedir + '/tree.' + str(filenum) + '.hdf5'
     while os.path.exists(filename):
         # Read data
-        f = h5py.File(filename, 'r')
+        f = h5py.File(filename, mode='r')
         snapnums_dict[filenum] = f['Tree']['SnapNum'][:]
         subfind_ids_dict[filenum] = f['Tree']['SubfindID'][:]
         nrows_dict[filenum] = f['Tree'].shape[0]
@@ -145,11 +145,11 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
     groupfilename = (basedir + '/groups_%s/%s_%s.0.hdf5' %
                 (str(snap_getfieldsfrom).zfill(3), name, str(snap_getfieldsfrom).zfill(3)))
 
-    f = h5py.File(groupfilename, 'r')
-    subhalo_quantities = f['Subhalo'].keys()
+    f = h5py.File(groupfilename, mode='r')
+    subhalo_quantities = list(f['Subhalo'].keys())
 
     #group_quantities = ['Group_M_Crit200', 'Group_M_Mean200', 'Group_M_TopHat200']
-    group_quantities = f['Group'].keys()
+    group_quantities = list(f['Group'].keys())
     field_name_list = subhalo_quantities + group_quantities
     group_name_list = (len(subhalo_quantities) * ['Subhalo'] +
                        len(group_quantities) * ['Group'])
@@ -187,14 +187,13 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
         # Create write folder if necessary
         dir_newcolumn = treedir + '/columns/' + field_name
         if not os.path.exists(dir_newcolumn):
-            os.popen('mkdir -p ' + dir_newcolumn)
+            os.makedirs(dir_newcolumn, mode=0o755)
 
         print('Ordering values and writing to files...')
         # Repeat for every tree file
         for filenum in nrows_dict.keys():
             # Create HDF5 file for the new column
             filename_newcolumn = dir_newcolumn + '/column.' + str(filenum) + '.hdf5'
-            f_newcolumn = h5py.File(filename_newcolumn, 'w')
 
             # Iterate through the tree rows, adding info to an array in memory.
             if len(field_shape) == 1:
@@ -206,17 +205,17 @@ def create_extra_columns(treedir, basedir, snapnum_first, snapnum_last,
                 raise
 
             if group_name == 'Subhalo':
-                for i in xrange(nrows_dict[filenum]):
+                for i in range(nrows_dict[filenum]):
                     data_for_table[i] = data_catalog[snapnums_dict[filenum][i]][subfind_ids_dict[filenum][i]]
             else:  # FoF groups
-                for i in xrange(nrows_dict[filenum]):
+                for i in range(nrows_dict[filenum]):
                     cur_snap = snapnums_dict[filenum][i]
                     cur_subfind_id = subfind_ids_dict[filenum][i]
                     data_for_table[i] = data_catalog[cur_snap][sub_gr_nr[cur_snap][cur_subfind_id]]
 
             # Save to HDF5 file
-            f_newcolumn.create_dataset(field_name, data=data_for_table)
-            f_newcolumn.close()
+            with h5py.File(filename_newcolumn, mode='w') as f_newcolumn:
+                f_newcolumn.create_dataset(field_name, data=data_for_table)
             
         print('Finished writing %s to files.\n' % (field_name))
 

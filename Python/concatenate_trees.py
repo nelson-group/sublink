@@ -17,7 +17,7 @@ def concatenate_datasets(treepath):
     # Get dataset names
     filename = treepath + '.0.hdf5'
     f = h5py.File(filename, 'r')
-    field_name_list = f.keys()
+    field_name_list = list(f.keys())
     f.close()
 
     # Add datasets one by one

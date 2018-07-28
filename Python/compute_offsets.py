@@ -67,7 +67,7 @@ def compute_offsets(basedir, treedir, snapnum_first, snapnum_last):
     SubhaloID_offsets = []
     LastProgenitorID_offsets = []
     MainLeafProgenitorID_offsets = []
-    for snapnum in xrange(snapnum_last+1):
+    for snapnum in range(snapnum_last+1):
         # Get number of subhalos
         if snapnum >= snapnum_first:
             filename = (basedir + '/groups_%s/fof_subhalo_tab_%s.0.hdf5' %
@@ -86,7 +86,7 @@ def compute_offsets(basedir, treedir, snapnum_first, snapnum_last):
 
     start = time.time()
     print('Computing offsets...')
-    for i in xrange(nsubs_trees):
+    for i in range(nsubs_trees):
         RowNum_offsets[SnapNum_trees[i]][SubfindID_trees[i]] = i
         SubhaloID_offsets[SnapNum_trees[i]][SubfindID_trees[i]] = SubhaloID_trees[i]
         LastProgenitorID_offsets[SnapNum_trees[i]][SubfindID_trees[i]] = LastProgenitorID_trees[i]
@@ -100,7 +100,7 @@ def compute_offsets(basedir, treedir, snapnum_first, snapnum_last):
     # Create folder if necessary
     dir_offsets = treedir + '/offsets'
     if not os.path.exists(dir_offsets):
-        os.popen('mkdir -p ' + dir_offsets)
+        os.makedirs(dir_offsets, mode=0o755)
 
     for snapnum in range(snapnum_first, snapnum_last+1):
         filename_offsets = '%s/offsets_%s.hdf5' % (dir_offsets, str(snapnum).zfill(3))
