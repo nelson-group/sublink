@@ -134,13 +134,14 @@ void merger_history_sub(Subhalo sub,
 }
 
 /** @brief Get snapshot of last major (minor) merger. */
-void merger_history_all(const std::string& basedir, const std::string& treedir,
-    const std::string& writepath, const snapnum_type snapnum_first,
-    const snapnum_type snapnum_last) {
+void merger_history_all(
+    const std::string& suite, const std::string& basedir,
+    const std::string& treedir, const std::string& writepath,
+    const snapnum_type snapnum_first, const snapnum_type snapnum_last) {
 
   // Get time (in Gyr) and redshift for each snapshot.
-  auto redshifts_all = cosmo::get_redshifts();
-  auto times_all = cosmo::get_times_Gyr();
+  auto redshifts_all = cosmo::get_redshifts(suite);
+  auto times_all = cosmo::get_times_Gyr(suite);
 
   // Load merger tree
   WallClock wall_clock;
@@ -206,25 +207,26 @@ void merger_history_all(const std::string& basedir, const std::string& treedir,
 int main(int argc, char** argv)
 {
   // Check input arguments
-  if (argc != 6) {
-    std::cerr << "Usage: " << argv[0] << " basedir treedir writepath" <<
+  if (argc != 7) {
+    std::cerr << "Usage: " << argv[0] << " suite basedir treedir writepath" <<
         " snapnum_first snapnum_last\n";
     exit(1);
   }
 
   // Read input
-  std::string basedir(argv[1]);
-  std::string treedir(argv[2]);
-  std::string writepath(argv[3]);
-  snapnum_type snapnum_first = atoi(argv[4]);
-  snapnum_type snapnum_last = atoi(argv[5]);
+  std::string suite(argv[1]);
+  std::string basedir(argv[2]);
+  std::string treedir(argv[3]);
+  std::string writepath(argv[4]);
+  snapnum_type snapnum_first = atoi(argv[5]);
+  snapnum_type snapnum_last = atoi(argv[6]);
 
   // Measure CPU and wall clock (real) time
   WallClock wall_clock;
   CPUClock cpu_clock;
 
   // Do stuff
-  merger_history_all(basedir, treedir, writepath, snapnum_first, snapnum_last);
+  merger_history_all(suite, basedir, treedir, writepath, snapnum_first, snapnum_last);
 
   // Print wall clock time and speedup
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";

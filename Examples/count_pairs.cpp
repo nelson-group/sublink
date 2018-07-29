@@ -420,14 +420,16 @@ void count_pairs_sub(const SpaceSearcherType& s,
 }
 
 /** @brief Count close pairs and print to files. */
-void count_pairs_all(const std::string& simdir, const std::string& treedir,
+void count_pairs_all(
+    const std::string& suite, const std::string& simdir, const std::string& treedir,
     const std::string& envdir, const std::string& writepath,
     const snapnum_type snapnum_first, const snapnum_type snapnum_last,
     const real_type rmin, const real_type rmax,
     const real_type velocity_threshold, const real_type log_mstar_min) {
 
   // Convert minimum mass to 10^10 Msun/h:
-  float mstar_min = cosmo::h * std::pow(10.0, log_mstar_min - 10.0);
+  auto params = cosmo::CosmologicalParameters(suite);
+  float mstar_min = params.h * std::pow(10.0, log_mstar_min - 10.0);
 
   // Get box size in ckpc/h; note conversion to float
   std::stringstream tmp_stream;
@@ -439,7 +441,7 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
       arepo::get_scalar_attribute<double>(file_name, "BoxSize"));
 
   // Get snapshot redshifts.
-  auto redshifts_all = cosmo::get_redshifts();
+  auto redshifts_all = cosmo::get_redshifts(suite);
 
   // Read overdensities for all snapshots
   std::cout << "Reading overdensities...\n";
@@ -465,7 +467,7 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
 
     // Some parameters
     real_type cur_z = redshifts_all[snapnum];
-    real_type cur_H_kpc_h = cosmo::H_kpc_h(cur_z);
+    real_type cur_H_kpc_h = cosmo::H_kpc_h(cur_z, params);
     real_type rmin_comoving = rmin * (1.0 + cur_z);
     real_type rmax_comoving = rmax * (1.0 + cur_z);
 
@@ -604,31 +606,32 @@ void count_pairs_all(const std::string& simdir, const std::string& treedir,
 int main(int argc, char** argv)
 {
   // Check input arguments
-  if (argc != 11) {
-    std::cerr << "Usage: " << argv[0] << " simdir treedir envdir writepath" <<
+  if (argc != 12) {
+    std::cerr << "Usage: " << argv[0] << " suite simdir treedir envdir writepath" <<
         " snapnum_first snapnum_last rmin rmax velocity_threshold log_mstar_min\n";
     exit(1);
   }
 
   // Read input
-  std::string simdir(argv[1]);
-  std::string treedir(argv[2]);
-  std::string envdir(argv[3]);
-  std::string writepath(argv[4]);
-  snapnum_type snapnum_first = atoi(argv[5]);
-  snapnum_type snapnum_last = atoi(argv[6]);
-  real_type rmin = atof(argv[7]);  // ckpc/h
-  real_type rmax = atof(argv[8]);  // ckpc/h
-  real_type velocity_threshold = atof(argv[9]);  // km/s
-  real_type log_mstar_min = atof(argv[10]);  // base 10, Msun
+  std::string suite(argv[1]);
+  std::string simdir(argv[2]);
+  std::string treedir(argv[3]);
+  std::string envdir(argv[4]);
+  std::string writepath(argv[5]);
+  snapnum_type snapnum_first = atoi(argv[6]);
+  snapnum_type snapnum_last = atoi(argv[7]);
+  real_type rmin = atof(argv[8]);  // ckpc/h
+  real_type rmax = atof(argv[9]);  // ckpc/h
+  real_type velocity_threshold = atof(argv[10]);  // km/s
+  real_type log_mstar_min = atof(argv[11]);  // base 10, Msun
 
   // Measure CPU and wall clock (real) time
   WallClock wall_clock;
   CPUClock cpu_clock;
 
   // Do stuff
-  count_pairs_all(simdir, treedir, envdir, writepath, snapnum_first, snapnum_last,
-      rmin, rmax, velocity_threshold, log_mstar_min);
+  count_pairs_all(suite, simdir, treedir, envdir, writepath, snapnum_first,
+      snapnum_last, rmin, rmax, velocity_threshold, log_mstar_min);
 
   // Print wall clock time and speedup
   std::cout << "Time: " << wall_clock.seconds() << " s.\n";

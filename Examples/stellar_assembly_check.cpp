@@ -18,7 +18,6 @@
 #include "../InputOutput/ReadTreeHDF5.hpp"
 #include "../InputOutput/GeneralHDF5.hpp"
 #include "../Util/GeneralUtil.hpp"
-#include "../Util/Cosmology.hpp"  // cosmo::get_redshifts, cosmo::get_times_Gyr
 #include "../Util/TreeUtil.hpp"
 
 struct AccretedData {
