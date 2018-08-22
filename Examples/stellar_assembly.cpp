@@ -378,7 +378,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::vector<int8_t> AccretionOrigin(nparts, -1);
     std::vector<real_type> MergerMassRatio(nparts, -1);
     std::vector<real_type> MergerMass(nparts, -1);
-    std::vector<snapnum_type> MergerSnapNum(nparts, -1);
+    std::vector<int16_t> MergerSnap(nparts, -1);
     std::vector<real_type> DistanceAtFormation(nparts, -1);
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
@@ -439,11 +439,11 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
           AccretionOrigin[pos] = 2;  // "flyby"
 
         // Merger mass ratio can be determined in any of the above cases:
-        real_type merger_mass;
-        snapnum_type merger_snapnum;
-        MergerMassRatio[pos] = get_merger_mass_ratio(cur_sub, form_sub, &merger_mass, &merger_snapnum);
+        float merger_mass;
+        int merger_snap;
+        MergerMassRatio[pos] = get_merger_mass_ratio(cur_sub, form_sub, &merger_mass, &merger_snap);
         MergerMass[pos] = merger_mass;
-        MergerSnapNum[pos] = merger_snapnum;
+        MergerSnap[pos] = (int16_t)merger_snap;
       }
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
@@ -470,7 +470,7 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         H5::PredType::NATIVE_FLOAT);
     add_array(writefile, MergerMass, "MergerMass",
         H5::PredType::NATIVE_FLOAT);
-    add_array(writefile, MergerSnapNum, "MergerSnapNum",
+    add_array(writefile, MergerSnap, "MergerSnap",
         H5::PredType::NATIVE_INT16);
     add_array(writefile, DistanceAtFormation, "DistanceAtFormation",
         H5::PredType::NATIVE_FLOAT);
@@ -500,9 +500,9 @@ int main(int argc, char** argv)
   std::string basedir(argv[1]);
   std::string treedir(argv[2]);
   std::string writepath(argv[3]);
-  snapnum_type snapnum_first = atoi(argv[4]);
-  snapnum_type snapnum_last = atoi(argv[5]);
-  snapnum_type snapnum_restart = atoi(argv[6]);
+  int16_t snapnum_first = atoi(argv[4]);
+  int16_t snapnum_last = atoi(argv[5]);
+  int16_t snapnum_restart = atoi(argv[6]);
 
   // Measure CPU and wall clock (real) time
   WallClock wall_clock;
