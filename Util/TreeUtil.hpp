@@ -313,7 +313,7 @@ bool after_infall(Subhalo primary, Subhalo secondary) {
  *
  * @note @a primary and @a secondary need not merge eventually.
  */
-real_type get_merger_mass_ratio(Subhalo primary, Subhalo secondary) {
+real_type get_merger_mass_ratio(Subhalo primary, Subhalo secondary, float* merger_mass=NULL, int* merger_snap=NULL) {
   // Check preconditions
   //assert(primary.is_valid() && secondary.is_valid());
   //assert(!along_main_branch(primary, secondary));
@@ -367,6 +367,13 @@ real_type get_merger_mass_ratio(Subhalo primary, Subhalo secondary) {
     }
     // "Increment" secondary
     secondary = secondary.descendant();
+  }
+
+  if (merger_mass) {
+    *merger_mass = std::min(mstar_stmax_2, mstar_stmax_1);
+  }
+  if (merger_snap) {
+    *merger_snap = secondary.snapnum();
   }
 
   // If either stellar mass is zero, mass ratio is undefined.

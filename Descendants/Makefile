@@ -38,11 +38,14 @@ CXXFLAGS += -fopenmp -DUSE_OPENMP
 
 # Define any directories containing libraries
 #   To include directories use -Lpath/to/files
-LDFLAGS +=
+LDFLAGS =
 
 # Define any libraries to link into executable
 #   To link in libraries (libXXX.so or libXXX.a) use -lXXX
 LDLIBS +=
+
+LDFLAGS += -L${HDF5_HOME}/lib/
+INCLUDES += -I${HDF5_HOME}/include/
 
 ##################
 # The following part of the makefile defines generic rules; it can be used to

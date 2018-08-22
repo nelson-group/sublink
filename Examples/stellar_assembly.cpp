@@ -377,6 +377,8 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
     std::vector<int8_t> AfterInfall(nparts, -1);
     std::vector<int8_t> AccretionOrigin(nparts, -1);
     std::vector<real_type> MergerMassRatio(nparts, -1);
+    std::vector<real_type> MergerMass(nparts, -1);
+    std::vector<int16_t> MergerSnap(nparts, -1);
     std::vector<real_type> DistanceAtFormation(nparts, -1);
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
@@ -435,8 +437,13 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
           AccretionOrigin[pos] = 1;  // ongoing merger
         else
           AccretionOrigin[pos] = 2;  // "flyby"
+
         // Merger mass ratio can be determined in any of the above cases:
-        MergerMassRatio[pos] = get_merger_mass_ratio(cur_sub, form_sub);
+        float merger_mass;
+        int merger_snap;
+        MergerMassRatio[pos] = get_merger_mass_ratio(cur_sub, form_sub, &merger_mass, &merger_snap);
+        MergerMass[pos] = merger_mass;
+        MergerSnap[pos] = (int16_t)merger_snap;
       }
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
@@ -461,6 +468,10 @@ void stellar_assembly(const std::string& basedir, const std::string& treedir,
         H5::PredType::NATIVE_INT8);
     add_array(writefile, MergerMassRatio, "MergerMassRatio",
         H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, MergerMass, "MergerMass",
+        H5::PredType::NATIVE_FLOAT);
+    add_array(writefile, MergerSnap, "MergerSnap",
+        H5::PredType::NATIVE_INT16);
     add_array(writefile, DistanceAtFormation, "DistanceAtFormation",
         H5::PredType::NATIVE_FLOAT);
 

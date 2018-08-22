@@ -642,7 +642,7 @@ private:
     // (alternatively, set max_nsubs_per_file to desired value, or 
     // increase 1 to e.g. 5 or 10 to proportionally lower the number 
     // of output file chunks written)
-    uint64_t max_nsubs_per_file = trees_.front()->subhalos.size() * 1;
+    uint64_t max_nsubs_per_file = trees_.front()->subhalos.size() * 5;
 
     // Assign tree and subhalo IDs and determine which are the first
     // and last trees that go into each file.

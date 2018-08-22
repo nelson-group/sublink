@@ -55,6 +55,9 @@ LDFLAGS +=
 #   To link in libraries (libXXX.so or libXXX.a) use -lXXX
 LDLIBS +=
 
+LDFLAGS += -L${HDF5_HOME}/lib/
+INCLUDES += -I${HDF5_HOME}/include/
+
 ##################
 # The following part of the makefile defines generic rules; it can be used to
 # build any executable just by changing the definitions above.
