@@ -211,10 +211,6 @@ public:
       wall_clock.start();
       auto nsubs = subfind::get_scalar_attribute<uint32_t>(
           basedir_, snapnum_, "Nsubgroups_Total");
-
-      if (!nsubs)
-        return; // no subhalos in this snapshot
-
       std::vector<std::vector<uint32_t>> sub_len_parttype;
       std::vector<std::vector<uint64_t>> sub_offset_parttype;
       for (unsigned l = 0; l < num_parttypes; ++l) {
