@@ -11,6 +11,7 @@ EXEC += count_pairs
 EXEC += merger_history
 EXEC += merger_history_bonus
 EXEC += merger_history_ekta
+EXEC += merger_history_lisa
 EXEC += infall_catalog
 EXEC += tree_test
 EXEC += custom_1
