@@ -3,7 +3,7 @@
  * @brief Implement a new sorting function with performance somewhere in between
  *        the serial and parallel versions of std::stable_sort.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <iostream>

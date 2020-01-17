@@ -21,7 +21,7 @@ This allows for more flexibility and faster tree traversal,
 but is only supported in C++ (this approach would be too
 memory-expensive in Python).
 
-Vicente Rodriguez-Gomez (vrg@jhu.edu)
+Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
 
 --------------- USAGE EXAMPLE: PRINT STELLAR MASS HISTORY ---------------
 

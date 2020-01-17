@@ -1,7 +1,7 @@
 /** @file count_mergers.cpp
  * @brief Count mergers and print their main properties into files.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 // Include some extra quantities from the merger trees:

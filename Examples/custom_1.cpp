@@ -3,7 +3,7 @@
  *        with mass ratio > 1:10, and print the mass ratios of those mergers,
  *        as well as fgas and g-r of the secondary.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 // Include some extra quantities from the merger trees:

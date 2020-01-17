@@ -2,7 +2,7 @@
 /** @file AllGalaxies.hpp
  * @brief Define the AllGalaxies and Galaxy classes.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <tuple>  // std::tie

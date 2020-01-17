@@ -4,7 +4,7 @@
  *        (mass-weighted) time since all mergers, and the mean
  *        (mass-weighted) cold gas fraction of the secondary progenitors.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 // Include some extra quantities from the merger trees:

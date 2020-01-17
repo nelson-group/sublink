@@ -3,7 +3,7 @@
  * @brief Useful functions for working with Subfind catalogs and
  *        SubLink merger trees.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <iostream>

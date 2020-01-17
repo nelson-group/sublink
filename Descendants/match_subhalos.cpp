@@ -1,7 +1,7 @@
 /** @file match_subhalos.cpp
  * @brief Find subhalo matches between two different simulations.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <fstream>

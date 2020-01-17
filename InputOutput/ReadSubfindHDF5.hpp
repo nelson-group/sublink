@@ -2,7 +2,7 @@
 /** @file ReadSubfindHDF5.hpp
  * @brief Utilities to read Subfind HDF5 snapshot files.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <iostream>

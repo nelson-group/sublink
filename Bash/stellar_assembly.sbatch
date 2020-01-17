@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --mail-user=vrg@jhu.edu
+#SBATCH --mail-user=v.rodriguez@irya.unam.mx
 #SBATCH --mail-type=ALL
 #SBATCH -J stars_L75n1820FP
 #SBATCH -o stars_L75n1820FP.out

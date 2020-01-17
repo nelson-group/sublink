@@ -1,7 +1,7 @@
 /** @file merger_history.cpp
  * @brief For each galaxy, print some info about the last merger.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 // Include some extra quantities from the merger trees:

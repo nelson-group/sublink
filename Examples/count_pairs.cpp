@@ -1,7 +1,7 @@
 /** @file count_pairs.cpp
  * @brief Count galaxy close pairs and print their main properties into files.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 // Include some extra quantities from the merger trees:

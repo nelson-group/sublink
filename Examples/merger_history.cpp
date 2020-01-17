@@ -3,7 +3,7 @@
  *        the snapshot number of the last major merger and the number of
  *        major mergers in the last Gyr.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 // Include some extra quantities from the merger trees:

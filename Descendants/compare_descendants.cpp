@@ -2,7 +2,7 @@
  * @brief Compare the descendants created by @a find_descendants.cpp
  * during the first and second "passes."
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <fstream>

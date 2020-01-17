@@ -4,7 +4,7 @@
  *
  * See tree_test.cpp for an usage example.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <iostream>

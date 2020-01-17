@@ -4,7 +4,7 @@
  * @brief Defines the WritableVector class, which is convenient for writing
  *        data to HDF5 files.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <vector>

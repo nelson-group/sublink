@@ -3,7 +3,7 @@
  * @brief Some functions for working with Arepo snapshot files and
  * Subfind catalogs.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <vector>

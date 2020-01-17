@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --mail-user=vrg@jhu.edu
+#SBATCH --mail-user=v.rodriguez@irya.unam.mx
 #SBATCH --mail-type=FAIL
 #SBATCH --array=0-7
 #SBATCH -J gal_L75n910FP_part4

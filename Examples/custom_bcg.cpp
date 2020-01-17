@@ -1,7 +1,7 @@
 /** @file custom_bcg.cpp
  * @brief Print some info for the most massive galaxies in the simulation.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 // Include some extra quantities from the merger trees:

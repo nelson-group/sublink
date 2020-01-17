@@ -2,7 +2,7 @@
 /** @file Cosmology.hpp
  * @brief Some basic cosmology equations.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include <vector>

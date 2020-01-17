@@ -1,7 +1,7 @@
 /** @file build_trees.cpp
  * @brief Construct merger trees using descendant files.
  *
- * @author Vicente Rodriguez-Gomez (vrg@jhu.edu)
+ * @author Vicente Rodriguez-Gomez (v.rodriguez@irya.unam.mx)
  */
 
 #include "TreesClasses.hpp"
