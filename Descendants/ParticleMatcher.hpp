@@ -400,13 +400,16 @@ private:
       else
         it->add_to_score(data_it->weight);
 
-      // Sanity checks
-      assert(sub_index1 < (int)snap1_->nsubs());
-      assert(sub_index2 < (int)snap2_->nsubs());
       if ( (data_it+1)->id == (data_it+2)->id )
         std::cout << "WARNING DUPLICATE ID: it+1 id=" << (data_it+1)->id << " sub=" << (data_it+1)->sub_index 
                   << " it+2 id=" << (data_it+2)->id << " sub=" << (data_it+2)->sub_index << std::endl;
-        //assert( (data_it+1)->id != (data_it+2)->id ); // not true for L75n1820TNG due to duplicate PT4 IDs
+
+      // The following assertions might fail in L75n1820TNG (aka TNG100-1)
+      // due to duplicate PartType4 IDs. We comment them out hoping that
+      // this happens for a very small fraction of the particles.
+      //assert( (data_it+1)->id != (data_it+2)->id );
+      //assert(sub_index1 < (int)snap1_->nsubs());
+      //assert(sub_index2 < (int)snap2_->nsubs());
     }
     std::cout << "Time: " << wall_clock.seconds() << " s.\n";
 
