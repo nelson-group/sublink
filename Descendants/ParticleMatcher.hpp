@@ -393,6 +393,11 @@ private:
       index_type sub_index1 = data_it->sub_index;  // progenitor
       index_type sub_index2 = (data_it+1)->sub_index;  // candidate
 
+      if (sub_index1 >= (int)snap1_->nsubs()) {
+        std::cerr << "WARNING: sub_index1=" << sub_index1 << " is out of bounds"
+                  << " (nsubs1=" << snap1_->nsubs() << ")\n";
+        continue;
+      }
       auto& cur_cands = scores[sub_index1];
       auto it = std::find(cur_cands.begin(), cur_cands.end(), sub_index2);
       if (it == cur_cands.end())
@@ -401,7 +406,7 @@ private:
         it->add_to_score(data_it->weight);
 
       if ( (data_it+1)->id == (data_it+2)->id )
-        std::cout << "WARNING DUPLICATE ID: it+1 id=" << (data_it+1)->id << " sub=" << (data_it+1)->sub_index 
+        std::cerr << "WARNING DUPLICATE ID: it+1 id=" << (data_it+1)->id << " sub=" << (data_it+1)->sub_index
                   << " it+2 id=" << (data_it+2)->id << " sub=" << (data_it+2)->sub_index << std::endl;
 
       // The following assertions might fail in L75n1820TNG (aka TNG100-1)
