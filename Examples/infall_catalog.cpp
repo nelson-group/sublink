@@ -22,7 +22,7 @@
 #include "../Util/TreeUtil.hpp"
 
 /** @brief Get some info for all the objects that have "infalled"
- * into FoF groups at z=0.
+ * into FoF groups at snapshot of interest (snapnum_last).
  */
 void infall_catalog(const std::string& basedir, const std::string& treedir,
     const std::string& writedir, const snapnum_type snapnum_last) {
@@ -46,7 +46,7 @@ void infall_catalog(const std::string& basedir, const std::string& treedir,
       wall_clock.seconds() << " s.\n";
   std::cout << "\n";
 
-  // Load some FoF group info at z=0
+  // Load some FoF group info at snapshot of interest (snapnum_last)
   std::cout << "Loading FoF group info...\n";
   wall_clock.start();
   auto group_first_sub = subfind::read_block<uint32_t>(
@@ -89,7 +89,7 @@ void infall_catalog(const std::string& basedir, const std::string& treedir,
   // For cases where infall is well defined but R200Crit is not:
   FloatArray<6> invalid_masstype = {-1, -1, -1, -1, -1, -1};
 
-  // Iterate over FoF groups at z=0
+  // Iterate over FoF groups at snapshot of interest (snapnum_last).
   std::cout << "Iterating over FoF groups...\n";
   wall_clock.start();
   for (uint32_t group_index = 0; group_index < ngroups; ++group_index) {
@@ -121,8 +121,10 @@ void infall_catalog(const std::string& basedir, const std::string& treedir,
 
         // If cur_sub is the first progenitor of its descendant, we
         // already took it into account, so we skip.
+        // This check only applies to subhalos with snapnum < snapnum_last.
         auto desc = cur_sub.descendant();
-        if (desc.is_valid() && desc.first_progenitor() == cur_sub)
+        if (desc.is_valid() && desc.first_progenitor() == cur_sub &&
+            cur_sub.snapnum() < snapnum_last)
           continue;
 
         // Get properties at infall, taking orig_sub as the primary
