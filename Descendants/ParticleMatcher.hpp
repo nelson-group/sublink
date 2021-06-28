@@ -27,7 +27,7 @@
 
 // Determines how important is the contribution from the innermost
 // particles in a subhalo when finding a descendant.
-static constexpr float alpha_weight = -1;
+static constexpr float alpha_weight = 1;
 
 //////////////////////
 // TYPE DEFINITIONS //
@@ -268,7 +268,7 @@ public:
               pm_->data_.emplace_back(
                   part_id[snap_count],
                   sub_uindex,
-                  std::pow(static_cast<real_type>(i+1), alpha_weight));
+                  std::pow(static_cast<real_type>(i+1), -alpha_weight));
               ++snap_count;
             }
           }
@@ -287,7 +287,7 @@ public:
                     part_id[snap_count],
                     sub_uindex,
                     part_mass[snap_count] * std::pow(
-                        static_cast<real_type>(i+1), alpha_weight));
+                        static_cast<real_type>(i+1), -alpha_weight));
                 sub_len_[sub_uindex] += 1;
                 sub_mass_[sub_uindex] += part_mass[snap_count];
               }
@@ -305,7 +305,7 @@ public:
                   part_id[snap_count],
                   sub_uindex,
                   part_mass[snap_count] * std::pow(
-                      static_cast<real_type>(i+1), alpha_weight));
+                      static_cast<real_type>(i+1), -alpha_weight));
               sub_len_[sub_uindex] += 1;
               sub_mass_[sub_uindex] += part_mass[snap_count];
               ++snap_count;
