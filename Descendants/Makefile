@@ -33,6 +33,9 @@ CXXFLAGS += -lhdf5_cpp -lhdf5 -DOMPI_SKIP_MPICXX=1
 # Parallel sort
 CXXFLAGS += -fopenmp -DUSE_OPENMP
 
+## Use "symmetric" merit function for matching subhalos (RG17).
+#CXXFLAGS += -DSYMMETRIC
+
 ## Profiling
 #CXXFLAGS += -g -pg
 

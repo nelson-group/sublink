@@ -8,6 +8,10 @@
 
 #include "ParticleMatcher.hpp"
 
+#ifndef SYMMETRIC
+static_assert(false, "Should use the SYMMETRIC compilation flag (see RG17).");
+#endif
+
 int main(int argc, char** argv)
 {
   // Check input arguments

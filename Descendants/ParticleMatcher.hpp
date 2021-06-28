@@ -398,11 +398,17 @@ private:
       }
       auto& cur_cands = scores[sub_index1];
       auto it = std::find(cur_cands.begin(), cur_cands.end(), sub_index2);
+#ifdef SYMMETRIC
+      if (it == cur_cands.end())
+        cur_cands.emplace_back(sub_index2, data_it->weight + (data_it+1)->weight);
+      else
+        it->add_to_score(data_it->weight + (data_it+1)->weight);
+#else
       if (it == cur_cands.end())
         cur_cands.emplace_back(sub_index2, data_it->weight);
       else
         it->add_to_score(data_it->weight);
-
+#endif
       if ( (data_it+1)->id == (data_it+2)->id )
         std::cerr << "WARNING DUPLICATE ID: it+1 id=" << (data_it+1)->id << " sub=" << (data_it+1)->sub_index
                   << " it+2 id=" << (data_it+2)->id << " sub=" << (data_it+2)->sub_index << std::endl;
