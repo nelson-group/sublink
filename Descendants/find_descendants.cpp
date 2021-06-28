@@ -8,6 +8,11 @@
 
 #include "ParticleMatcher.hpp"
 
+// Determines how important is the contribution from the innermost
+// particles in a subhalo when finding a descendant. Usually set
+// to 1 for building trees (RG15) but 0 is better for matching centrals (RG17).
+static constexpr real_type alpha_weight = 1;
+
 int main(int argc, char** argv)
 {
   // Check input arguments
@@ -58,7 +63,8 @@ int main(int argc, char** argv)
     WallClock wall_clock;
 
     // Find descendants and write to files
-    auto pm = ParticleMatcher(basedir, basedir, snapnum1, snapnum2, tracking_scheme);
+    auto pm = ParticleMatcher(basedir, basedir, snapnum1, snapnum2,
+                              tracking_scheme, alpha_weight);
     pm.write_to_file(writepath);
 
     // Print CPU and wall clock time

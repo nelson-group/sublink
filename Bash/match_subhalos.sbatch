@@ -2,9 +2,9 @@
 
 #SBATCH --mail-user=v.rodriguez@irya.unam.mx
 #SBATCH --mail-type=ALL
-#SBATCH -J dm_match_L75n1820TNG
-#SBATCH -o dm_match_L75n1820TNG.out
-#SBATCH -e dm_match_L75n1820TNG.err
+#SBATCH -J dm_match_L75n1820TNG_0.0
+#SBATCH -o dm_match_L75n1820TNG_0.0.out
+#SBATCH -e dm_match_L75n1820TNG_0.0.err
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=8
 #SBATCH -t 2-00:00:00
@@ -18,6 +18,7 @@ export OMP_NUM_THREADS=$SLURM_NTASKS_PER_NODE
 
 TRACKING=Subhalos
 SKIP_SUFFIX=
+ALPHA_WEIGHT=0.0
 
 #~ # Illustris
 #~ FILESYSTEM=hernquistfs1
@@ -47,12 +48,12 @@ if [ $SIMULATION = L75n1820FP ]; then
 else
   SKIP_FILENAME=skip_snapshots/skip_snapshots${SKIP_SUFFIX}.txt
 fi
-WRITEDIR=${TREEDIR}/dm_matches
+WRITEDIR=${TREEDIR}/dm_matches_${ALPHA_WEIGHT}
 if [ ! -d $WRITEDIR ]; then
   mkdir -p $WRITEDIR
 fi
 WRITEPATH=${WRITEDIR}/dm_match
 
-./SubLink/Descendants/match_subhalos $BASEDIR1 $BASEDIR2 $WRITEPATH $SNAPNUM_FIRST $SNAPNUM_LAST $SNAPNUM_START $SNAPNUM_END $TRACKING ${SKIP_FILENAME}
-./SubLink/Descendants/match_subhalos $BASEDIR2 $BASEDIR1 ${WRITEPATH}_reverse $SNAPNUM_FIRST $SNAPNUM_LAST $SNAPNUM_START $SNAPNUM_END $TRACKING ${SKIP_FILENAME}
+./SubLink/Descendants/match_subhalos $BASEDIR1 $BASEDIR2 $WRITEPATH $SNAPNUM_FIRST $SNAPNUM_LAST $SNAPNUM_START $SNAPNUM_END $TRACKING ${SKIP_FILENAME} ${ALPHA_WEIGHT}
+./SubLink/Descendants/match_subhalos $BASEDIR2 $BASEDIR1 ${WRITEPATH}_reverse $SNAPNUM_FIRST $SNAPNUM_LAST $SNAPNUM_START $SNAPNUM_END $TRACKING ${SKIP_FILENAME} ${ALPHA_WEIGHT}
 

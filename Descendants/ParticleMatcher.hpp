@@ -25,10 +25,6 @@
 #include "../Util/GeneralUtil.hpp"
 #include "../Util/TreeTypes.hpp"
 
-// Determines how important is the contribution from the innermost
-// particles in a subhalo when finding a descendant.
-static constexpr float alpha_weight = 1;
-
 //////////////////////
 // TYPE DEFINITIONS //
 //////////////////////
@@ -110,13 +106,13 @@ public:
   /** Constructor. */
   ParticleMatcher(const std::string& basedir1, const std::string& basedir2,
       const snapnum_type snapnum1, const snapnum_type snapnum2,
-      const std::string& tracking_scheme)
+      const std::string& tracking_scheme, const real_type alpha_weight)
       : snap1_(nullptr), snap2_(nullptr), data_() {
 
     // Create Snapshot objects.
-    snap1_ = new Snapshot(this, basedir1, snapnum1, tracking_scheme);
+    snap1_ = new Snapshot(this, basedir1, snapnum1, tracking_scheme, alpha_weight);
     if (snapnum2 != -1) {
-      snap2_ = new Snapshot(this, basedir2, snapnum2, tracking_scheme);
+      snap2_ = new Snapshot(this, basedir2, snapnum2, tracking_scheme, alpha_weight);
       match_particles();
     }
   }
@@ -182,16 +178,18 @@ public:
 
     /** Private constructor. */
     Snapshot(const ParticleMatcher* pm, const std::string& basedir,
-        const snapnum_type snapnum, const std::string& tracking_scheme)
+        const snapnum_type snapnum, const std::string& tracking_scheme,
+        const real_type alpha_weight)
         : pm_(const_cast<ParticleMatcher*>(pm)), basedir_(basedir),
           snapnum_(snapnum), sub_len_(), sub_mass_(), sub_grnr_(),
           descendants_(), first_scores_(), second_scores_() {
       // Read data
-      read_ids(tracking_scheme);
+      read_ids(tracking_scheme, alpha_weight);
     }
 
     /** @brief Read particle IDs and other information. */
-    void read_ids(const std::string& tracking_scheme) {
+    void read_ids(const std::string& tracking_scheme,
+                  const real_type alpha_weight) {
       // For performance checks
       WallClock wall_clock_all;
       WallClock wall_clock;

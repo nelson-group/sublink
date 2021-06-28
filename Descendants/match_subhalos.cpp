@@ -14,7 +14,7 @@ int main(int argc, char** argv)
   if (argc != 10) {
     std::cerr << "Usage: " << argv[0] << " basedir1 basedir2 writepath " <<
         "snapnum_first snapnum_last snapnum_start snapnum_end " <<
-        "tracking_scheme skipsnaps_filename\n";
+        "tracking_scheme skipsnaps_filename alpha_weight\n";
     exit(1);
   }
 
@@ -26,8 +26,9 @@ int main(int argc, char** argv)
   snapnum_type snapnum_last = atoi(argv[5]);
   snapnum_type snapnum_start = atoi(argv[6]);
   snapnum_type snapnum_end = atoi(argv[7]);
-  std::string tracking_scheme(argv[8]);  /* Subhalos or Galaxies */
+  std::string tracking_scheme(argv[8]);  // "Subhalos" or "Galaxies"
   std::string skipsnaps_filename(argv[9]);
+  real_type alpha_weight = atof(argv[10]);  // Usually 0 or 1
 
   // Create list of valid snapshots
   auto valid_snapnums = get_valid_snapnums(skipsnaps_filename,
@@ -48,7 +49,8 @@ int main(int argc, char** argv)
     WallClock wall_clock;
 
     // Find descendants and write to files
-    auto pm = ParticleMatcher(basedir1, basedir2, snapnum1, snapnum2, tracking_scheme);
+    auto pm = ParticleMatcher(basedir1, basedir2, snapnum1, snapnum2,
+                              tracking_scheme, alpha_weight);
     pm.write_to_file(writepath, false);
 
     // Print CPU and wall clock time
