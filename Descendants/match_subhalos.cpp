@@ -15,7 +15,7 @@ static_assert(false, "Should use the SYMMETRIC compilation flag (see RG17).");
 int main(int argc, char** argv)
 {
   // Check input arguments
-  if (argc != 10) {
+  if (argc != 11) {
     std::cerr << "Usage: " << argv[0] << " basedir1 basedir2 writepath " <<
         "snapnum_first snapnum_last snapnum_start snapnum_end " <<
         "tracking_scheme skipsnaps_filename alpha_weight\n";
